@@ -1,11 +1,16 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>SlotKeeper</title>
+    <title>Slotkeeper</title>
 </head>
 <body>
-    <h1>Tervetuloa Slotkeeperiin!</h1>
-    <p>Hello world!</p>
+    {% if username %}
+        <h2>Welcome, {{ username }}!</h2>
+        <p><a href="/logout">Log out</a></p>
+    {% else %}
+        <h2>You are not logged in.</h2>
+        <p><a href="/login">Log in</a> or <a href="/register">Create account</a></p>
+    {% endif %}
 </body>
 </html>
