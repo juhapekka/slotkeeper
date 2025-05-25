@@ -66,3 +66,13 @@ class Database:
         conn.execute("DELETE FROM devices WHERE id = ?", (device_id,))
         conn.commit()
         conn.close()
+
+    def search_devices(self, query):
+        conn = self._connect()
+        search = f'%{query}%'
+        devices = conn.execute(
+            "SELECT * FROM devices WHERE name LIKE ? OR description LIKE ?",
+            (search, search)
+        ).fetchall()
+        conn.close()
+        return devices
