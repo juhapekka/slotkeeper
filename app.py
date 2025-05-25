@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from Database import Database
 
 app = Flask(__name__)
 
@@ -8,11 +8,8 @@ app.secret_key = 'super_secret_key'  # Used to sign session cookies
 
 DATABASE = 'database.db'
 
-def get_db():
-    """Establish a database connection."""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Instantiate the Database class
+db = Database(DATABASE)
 
 @app.route('/')
 def index():
@@ -26,13 +23,9 @@ def register():
         password = request.form['password']
         password_hash = generate_password_hash(password)
 
-        con = get_db()
-
-        try:
-            con.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
-            con.commit()
+        if db.create_user(username, password_hash):
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        else:
             return "Username already exists."
     return render_template('register.html')
 
@@ -43,8 +36,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        con = get_db()
-        user = con.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        user = db.get_user_by_username(username)
 
         if user and check_password_hash(user['password_hash'], password):
             session['username'] = username
