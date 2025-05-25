@@ -8,6 +8,13 @@
     {% if username %}
         <h2>Welcome, {{ username }}!</h2>
         <p><a href="/logout">Log out</a></p>
+
+        <h3>Registered Test Devices</h3>
+        <ul>
+            {% for device in devices %}
+                <li><strong>{{ device.name }}</strong> — {{ device.description or 'No description' }}</li>
+            {% endfor %}
+        </ul>
     {% else %}
         <h2>You are not logged in.</h2>
         <p><a href="/login">Log in</a> or <a href="/register">Create account</a></p>

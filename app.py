@@ -13,7 +13,11 @@ db = Database(DATABASE)
 
 @app.route('/')
 def index():
-    return render_template('index.html', username=session.get('username'))
+    if 'username' in session:
+        devices = db.get_all_devices()
+        return render_template('index.html', username=session['username'], devices=devices)
+    else:
+        return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
