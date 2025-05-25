@@ -73,6 +73,29 @@ def add_device():
 
     return render_template('add_device.html')
 
+@app.route('/edit_device/<int:device_id>', methods=['GET', 'POST'])
+def edit_device(device_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        db.update_device(device_id, name, description)
+        return redirect(url_for('index'))
+
+    device = db.get_device_by_id(device_id)
+    if device:
+        return render_template('edit_device.html', device=device)
+    else:
+        return "Device not found."
+
+@app.route('/delete_device/<int:device_id>', methods=['POST'])
+def delete_device(device_id):
+    if 'username' in session:
+        db.delete_device(device_id)
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     app.run(debug=True)
 

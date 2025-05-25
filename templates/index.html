@@ -13,7 +13,13 @@
         <h3>Registered Test Devices</h3>
         <ul>
             {% for device in devices %}
-                <li><strong>{{ device.name }}</strong> — {{ device.description or 'No description' }}</li>
+                <li>
+                    <strong>{{ device.name }}</strong> — {{ device.description or 'No description' }}
+                    [<a href="/edit_device/{{ device.id }}">Edit</a>]
+                    <form method="post" action="/delete_device/{{ device.id }}" style="display:inline;">
+                        <button type="submit">Delete</button>
+                    </form>
+                </li>
             {% endfor %}
         </ul>
     {% else %}

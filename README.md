@@ -37,8 +37,8 @@ $ flask run
 ### edistyminen:
 
 - ✅ Käyttäjä pystyy luomaan tunnuksen ja kirjautumaan sisään sovellukseen.
-- ❌ Käyttäjä pystyy lisäämään testikoneita ja muokkaamaan ja poistamaan niitä.
-- ❌ Käyttäjä näkee sovellukseen lisätyt testikoneet.
+- ✅ Käyttäjä pystyy lisäämään testikoneita ja muokkaamaan ja poistamaan niitä.
+- ✅ Käyttäjä näkee sovellukseen lisätyt testikoneet.
 - ❌ Käyttäjä pystyy etsimään testikoneita hakusanalla.
 - ❌ Käyttäjäsivu näyttää, onko käyttäjällä voimassa olevia varauksia testikoneille.
 - ❌ Käyttäjä pystyy varaamaan testikoneen määräajaksi.
