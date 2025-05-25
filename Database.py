@@ -118,3 +118,12 @@ class Database:
         )
         conn.commit()
         conn.close()
+
+    def get_active_reservation_for_device(self, device_id):
+        conn = self._connect()
+        reservation = conn.execute(
+            "SELECT r.*, u.username FROM reservations r JOIN users u ON r.user_id = u.id WHERE r.device_id = ? AND r.reserved_until > CURRENT_TIMESTAMP ORDER BY r.reserved_from LIMIT 1",
+            (device_id,)
+        ).fetchone()
+        conn.close()
+        return reservation
