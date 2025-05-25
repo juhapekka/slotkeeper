@@ -20,7 +20,15 @@ def index():
             devices = db.search_devices(query)
         else:
             devices = db.get_all_devices()
-        return render_template('index.html', username=session['username'], devices=devices, query=query)
+        user = db.get_user_by_username(session['username'])
+
+        device_data = []
+        for device in devices:
+            reservation = db.get_active_reservation_for_device(device['id'])
+            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            device_data.append({'device': device, 'reservation': reservation, 'user_owned': user_owned})
+        
+        return render_template('index.html', username=session['username'], devices=device_data, query=query)
     return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -132,6 +140,18 @@ def reserve(device_id):
     if device:
         return render_template('reserve.html', device=device)
     return "Device not found."
+
+@app.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
+def cancel_reservation(reservation_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    user = db.get_user_by_username(session['username'])
+    db.cancel_reservation(reservation_id, user['id'])
+    return redirect(url_for('index'))
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    return datetime.fromtimestamp(value).strftime('%Y-%m-%d %H:%M')
 
 if __name__ == '__main__':
     app.run(debug=True)

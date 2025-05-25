@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 class Database:
     def __init__(self, db_path):
@@ -80,6 +81,8 @@ class Database:
     def create_reservation(self, user_id, device_id, reserved_from, reserved_until):
         conn = self._connect()
         try:
+            reserved_from = int(datetime.fromisoformat(reserved_from).timestamp())
+            reserved_until = int(datetime.fromisoformat(reserved_until).timestamp())
             conn.execute(
                 "INSERT INTO reservations (user_id, device_id, reserved_from, reserved_until) VALUES (?, ?, ?, ?)",
                 (user_id, device_id, reserved_from, reserved_until)
@@ -122,7 +125,15 @@ class Database:
     def get_active_reservation_for_device(self, device_id):
         conn = self._connect()
         reservation = conn.execute(
-            "SELECT r.*, u.username FROM reservations r JOIN users u ON r.user_id = u.id WHERE r.device_id = ? AND r.reserved_until > CURRENT_TIMESTAMP ORDER BY r.reserved_from LIMIT 1",
+            """
+            SELECT r.*, u.username 
+            FROM reservations r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.device_id = ? 
+            AND r.reserved_until > strftime('%s','now')
+            ORDER BY r.reserved_from 
+            LIMIT 1
+            """,
             (device_id,)
         ).fetchone()
         conn.close()

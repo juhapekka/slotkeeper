@@ -40,7 +40,7 @@ $ flask run
 - ✅ Käyttäjä pystyy lisäämään testikoneita ja muokkaamaan ja poistamaan niitä.
 - ✅ Käyttäjä näkee sovellukseen lisätyt testikoneet.
 - ✅ Käyttäjä pystyy etsimään testikoneita hakusanalla.
-- ❌ Käyttäjäsivu näyttää, onko käyttäjällä voimassa olevia varauksia testikoneille.
-- ❌ Käyttäjä pystyy varaamaan testikoneen määräajaksi.
-- ❌ Käyttäjä pystyy vapauttamaan varaamansa testikoneen.
+- ✅ Käyttäjäsivu näyttää, onko käyttäjällä voimassa olevia varauksia testikoneille.
+- ✅ Käyttäjä pystyy varaamaan testikoneen määräajaksi.
+- ✅ Käyttäjä pystyy vapauttamaan varaamansa testikoneen.
 - ❌ Käyttäjä pystyy antamaan testikoneelle kommentin. Testikoneesta näytetään kommentit.

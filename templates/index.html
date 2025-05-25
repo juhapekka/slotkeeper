@@ -16,12 +16,26 @@
             <input type="submit" value="Search">
         </form>
         <ul>
-            {% for device in devices %}
+            {% for entry in devices %}
                 <li>
-                    <strong>{{ device.name }}</strong> — {{ device.description or 'No description' }}
-                    [<a href="/edit_device/{{ device.id }}">Edit</a>]
-                    [<a href="/reserve/{{ device.id }}">Reserve</a>]
-                    <form method="post" action="/delete_device/{{ device.id }}" style="display:inline;">
+                    <strong>{{ entry.device.name }}</strong> — {{ entry.device.description or 'No description' }}
+                    {% if entry.reservation %}
+                        <div>
+                            <em>
+                                Reserved by {{ entry.reservation.username }} until 
+                                {{ entry.reservation.reserved_until | int | datetimeformat }}
+                            </em>
+                        </div>
+                        {% if entry.user_owned %}
+                            <form method="post" action="/cancel_reservation/{{ entry.reservation.id }}" style="display:inline;">
+                                <button type="submit">Release</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        [<a href="/reserve/{{ entry.device.id }}">Reserve</a>]
+                    {% endif %}
+                    [<a href="/edit_device/{{ entry.device.id }}">Edit</a>]
+                    <form method="post" action="/delete_device/{{ entry.device.id }}" style="display:inline;">
                         <button type="submit">Delete</button>
                     </form>
                 </li>
