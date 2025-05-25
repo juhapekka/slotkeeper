@@ -55,6 +55,24 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('index'))
 
+@app.route('/add_device', methods=['GET', 'POST'])
+def add_device():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        user = db.get_user_by_username(session['username'])
+
+        if user:
+            db.add_device(name, description, user['id'])
+            return redirect(url_for('index'))
+        else:
+            return "Error: Logged-in user not found."
+
+    return render_template('add_device.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
 
