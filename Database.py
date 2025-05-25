@@ -76,3 +76,45 @@ class Database:
         ).fetchall()
         conn.close()
         return devices
+
+    def create_reservation(self, user_id, device_id, reserved_from, reserved_until):
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT INTO reservations (user_id, device_id, reserved_from, reserved_until) VALUES (?, ?, ?, ?)",
+                (user_id, device_id, reserved_from, reserved_until)
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            print("Error creating reservation:", e)
+            return False
+        finally:
+            conn.close()
+
+    def get_reservations_by_user(self, user_id):
+        conn = self._connect()
+        reservations = conn.execute(
+            "SELECT r.*, d.name AS device_name FROM reservations r JOIN devices d ON r.device_id = d.id WHERE r.user_id = ? ORDER BY r.reserved_from DESC",
+            (user_id,)
+        ).fetchall()
+        conn.close()
+        return reservations
+
+    def get_active_reservations_for_device(self, device_id, current_time):
+        conn = self._connect()
+        reservations = conn.execute(
+            "SELECT * FROM reservations WHERE device_id = ? AND reserved_until > ?",
+            (device_id, current_time)
+        ).fetchall()
+        conn.close()
+        return reservations
+
+    def cancel_reservation(self, reservation_id, user_id):
+        conn = self._connect()
+        conn.execute(
+            "DELETE FROM reservations WHERE id = ? AND user_id = ?",
+            (reservation_id, user_id)
+        )
+        conn.commit()
+        conn.close()
