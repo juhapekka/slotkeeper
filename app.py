@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from Database import Database
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -98,6 +99,39 @@ def delete_device(device_id):
     if 'username' in session:
         db.delete_device(device_id)
     return redirect(url_for('index'))
+
+@app.route('/reserve/<int:device_id>', methods=['GET', 'POST'])
+def reserve(device_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = db.get_user_by_username(session['username'])
+    if not user:
+        return "Error: User not found."
+
+    if request.method == 'POST':
+        reserved_from = request.form['reserved_from']
+        reserved_until = request.form['reserved_until']
+
+        try:
+            start_dt = datetime.fromisoformat(reserved_from)
+            end_dt = datetime.fromisoformat(reserved_until)
+        except ValueError:
+            return "Invalid datetime format."
+
+        if end_dt <= start_dt:
+            return "Reservation end must be after start."
+
+        success = db.create_reservation(user['id'], device_id, reserved_from, reserved_until)
+        if success:
+            return redirect(url_for('index'))
+        else:
+            return "Reservation failed."
+
+    device = db.get_device_by_id(device_id)
+    if device:
+        return render_template('reserve.html', device=device)
+    return "Device not found."
 
 if __name__ == '__main__':
     app.run(debug=True)

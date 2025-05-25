@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Reserve Device</title>
+</head>
+<body>
+    <h2>Reserve {{ device.name }}</h2>
+    <form method="post">
+        From: <input type="datetime-local" name="reserved_from" required><br>
+        Until: <input type="datetime-local" name="reserved_until" required><br>
+        <input type="submit" value="Reserve">
+    </form>
+    <p><a href="/">Back to home</a></p>
+</body>
+</html>

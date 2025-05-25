@@ -20,6 +20,7 @@
                 <li>
                     <strong>{{ device.name }}</strong> — {{ device.description or 'No description' }}
                     [<a href="/edit_device/{{ device.id }}">Edit</a>]
+                    [<a href="/reserve/{{ device.id }}">Reserve</a>]
                     <form method="post" action="/delete_device/{{ device.id }}" style="display:inline;">
                         <button type="submit">Delete</button>
                     </form>
