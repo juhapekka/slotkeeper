@@ -48,3 +48,21 @@ class Database:
             return devices
         finally:
             conn.close()
+
+    def get_device_by_id(self, device_id):
+        conn = self._connect()
+        device = conn.execute("SELECT * FROM devices WHERE id = ?", (device_id,)).fetchone()
+        conn.close()
+        return device
+
+    def update_device(self, device_id, name, description):
+        conn = self._connect()
+        conn.execute("UPDATE devices SET name = ?, description = ? WHERE id = ?", (name, description, device_id))
+        conn.commit()
+        conn.close()
+
+    def delete_device(self, device_id):
+        conn = self._connect()
+        conn.execute("DELETE FROM devices WHERE id = ?", (device_id,))
+        conn.commit()
+        conn.close()
