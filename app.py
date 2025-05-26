@@ -22,13 +22,23 @@ def index():
             devices = db.get_all_devices()
         user = db.get_user_by_username(session['username'])
 
+        query = request.args.get('q', '')
+        only_mine = request.args.get('only_mine') == '1'
+
         device_data = []
         for device in devices:
             reservation = db.get_active_reservation_for_device(device['id'])
             user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            if only_mine and not user_owned:
+                continue              # Only show my own reservations.
             device_data.append({'device': device, 'reservation': reservation, 'user_owned': user_owned})
         
-        return render_template('index.html', username=session['username'], devices=device_data, query=query)
+        return render_template(
+            'index.html',
+            username=session['username'],
+            devices=device_data,
+            query=query,
+            only_mine=only_mine)
     return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
