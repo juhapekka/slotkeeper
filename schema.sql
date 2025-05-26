@@ -21,8 +21,7 @@ CREATE TABLE reservations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     device_id INTEGER NOT NULL,
-    reserved_from INTEGER NOT NULL,  -- timestamp
-    reserved_until INTEGER NOT NULL, -- timestamp
+    reserved_until INTEGER NOT NULL,
     created_at INTEGER DEFAULT (strftime('%s','now')),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (device_id) REFERENCES devices(id)
