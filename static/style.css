@@ -204,3 +204,40 @@ body {
   .top-bar .search-form button:hover{
     background: rgba(255,255,255,0.40);
   }
+
+  .login-container{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:calc(100vh - 70px);
+  }
+
+  .login-card{
+    width:400px;
+    text-align:center;
+  }
+
+  .login-card h2{ margin-top:0; }
+
+  .login-buttons{
+    display:flex;
+    gap:1rem;
+    justify-content:center;
+    margin-top:1rem;
+  }
+
+  .login-btn,
+  .register-btn{
+    flex:1 1 45%;
+    padding:8px 0;
+    border-radius:4px;
+    text-decoration:none;
+    font-weight:600;
+    background:#28a745;
+    color:#fff;
+  }
+
+  .register-btn{ background:#17a2b8; }
+
+  .login-btn:hover,
+  .register-btn:hover{ filter:brightness(1.1); }
