@@ -1,16 +1,37 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Reserve Device</title>
+  <meta charset="utf-8">
+  <title>Reserve – Slotkeeper</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Reserve {{ device.name }}</h2>
-    <form method="post">
-        From: <input type="datetime-local" name="reserved_from" required><br>
-        Until: <input type="datetime-local" name="reserved_until" required><br>
-        <input type="submit" value="Reserve">
-    </form>
-    <p><a href="/">Back to home</a></p>
+
+  <div class="login-container">
+    <div class="card login-card">
+
+      <h2>Reserve {{ device.name }}</h2>
+
+      {% if error %}
+        <div class="error-message">{{ error }}</div>
+      {% endif %}
+
+      <form method="post">
+        <label style="font-weight:600;">Until:</label>
+        <div style="margin:0.8rem 0 1.2rem 0;">
+          <input type="datetime-local" name="reserved_until" required
+                 style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+
+        <button type="submit" class="register-btn" style="width:100%;">Confirm reservation</button>
+      </form>
+
+      <p style="margin-top:1rem;">
+        <a href="/" class="login-btn" style="display:inline-block; width:100%;">Cancel</a>
+      </p>
+
+    </div>
+  </div>
+
 </body>
 </html>

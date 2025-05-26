@@ -83,7 +83,7 @@ class Database:
         conn.close()
         return devices
 
-    def create_reservation(self, user_id, device_id, reserved_from, reserved_until):
+    def create_reservation(self, user_id, device_id, reserved_until):
         conn = self._connect()
         try:
             reserved_until = int(datetime.fromisoformat(reserved_until).timestamp())

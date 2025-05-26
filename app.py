@@ -131,19 +131,9 @@ def reserve(device_id):
         return "Error: User not found."
 
     if request.method == 'POST':
-        reserved_from = request.form['reserved_from']
         reserved_until = request.form['reserved_until']
 
-        try:
-            start_dt = datetime.fromisoformat(reserved_from)
-            end_dt = datetime.fromisoformat(reserved_until)
-        except ValueError:
-            return "Invalid datetime format."
-
-        if end_dt <= start_dt:
-            return "Reservation end must be after start."
-
-        success = db.create_reservation(user['id'], device_id, reserved_from, reserved_until)
+        success = db.create_reservation(user['id'], device_id, reserved_until)
         if success:
             return redirect(url_for('index'))
         else:
