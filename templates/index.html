@@ -3,43 +3,62 @@
 <head>
     <meta charset="utf-8">
     <title>Slotkeeper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    {% if username %}
-        <h2>Welcome, {{ username }}!</h2>
-        <p><a href="/add_device">Add new device</a></p>
-        <p><a href="/logout">Log out</a></p>
-
-        <h3>Registered Test Devices</h3>
-        <form method="get" action="/">
-            <input type="text" name="q" placeholder="Search devices" value="{{ query or '' }}">
-            <input type="submit" value="Search">
+    <header class="top-bar">
+        <div class="brand">Slotkeeper</div>
+      
+        <form class="search-form" method="get" action="/">
+          <input type="text" name="q" placeholder="Search devices..." value="{{ query or '' }}">
+          <button type="submit">Search</button>
         </form>
+      
+        <div class="top-links">
+            <a href="/add_device">Add device</a>
+            <span class="username">{{ username }}</span>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </header>
+    {% if username %}
         <ul>
-            {% for entry in devices %}
-                <li>
-                    <strong>{{ entry.device.name }}</strong> — {{ entry.device.description or 'No description' }}
-                    {% if entry.reservation %}
-                        <div>
-                            <em>
-                                Reserved by {{ entry.reservation.username }} until 
-                                {{ entry.reservation.reserved_until | int | datetimeformat }}
-                            </em>
-                        </div>
-                        {% if entry.user_owned %}
-                            <form method="post" action="/cancel_reservation/{{ entry.reservation.id }}" style="display:inline;">
-                                <button type="submit">Release</button>
-                            </form>
-                        {% endif %}
-                    {% else %}
-                        [<a href="/reserve/{{ entry.device.id }}">Reserve</a>]
-                    {% endif %}
-                    [<a href="/edit_device/{{ entry.device.id }}">Edit</a>]
-                    <form method="post" action="/delete_device/{{ entry.device.id }}" style="display:inline;">
-                        <button type="submit">Delete</button>
+            <div class="device-container">
+                {% for entry in devices %}
+                <div class="card">
+              
+                  <!--  device headline + description  -->
+                  <div class="device-name">{{ entry.device.name }}</div>
+                  <div>{{ entry.device.description or 'No description' }}</div>
+              
+                  <!--  small edit / delete icons in top-right  -->
+                  <div class="card-header-icons">
+                    <a href="/edit_device/{{ entry.device.id }}" title="Edit">✏️</a>
+                    <form method="post" action="/delete_device/{{ entry.device.id }}">
+                      <button title="Delete">🗑️</button>
                     </form>
-                </li>
-            {% endfor %}
+                  </div>
+              
+                  <!--  colored status bar  -->
+                  {% if entry.reservation %}
+                    <div class="status-bar status-reserved">
+                      <span>Reserved by {{ entry.reservation.username }}
+                            until {{ entry.reservation.reserved_until | int | datetimeformat }}</span>
+              
+                      {% if entry.user_owned %}
+                        <form method="post" action="/cancel_reservation/{{ entry.reservation.id }}">
+                          <button>Release</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  {% else %}
+                    <div class="status-bar status-free">
+                      <span>Available</span>
+                      <a href="/reserve/{{ entry.device.id }}">Reserve</a>
+                    </div>
+                  {% endif %}              
+                </div>
+              {% endfor %}
+              </div>
         </ul>
     {% else %}
         <h2>You are not logged in.</h2>
