@@ -67,7 +67,9 @@ class Database:
 
     def update_device(self, device_id, name, description):
         conn = self._connect()
-        conn.execute("UPDATE devices SET name = ?, description = ? WHERE id = ?", (name, description, device_id))
+        conn.execute("UPDATE devices SET name = ?, description = ? WHERE id = ?",
+                     (name, description, device_id)
+        )
         conn.commit()
         conn.close()
 

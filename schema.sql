@@ -1,16 +1,19 @@
 -- Create user table in SQLite
+-- maximum user name lenght 32
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL CHECK(length(username) <= 32),
     password_hash TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create reservable device table
+-- maximum device name lenght 32
+-- maximum description size 4k
 CREATE TABLE devices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
+    name TEXT NOT NULL CHECK(length(name) <= 32),
+    description TEXT CHECK(length(description) <= 4096),
     created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id)
