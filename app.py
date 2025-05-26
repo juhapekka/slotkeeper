@@ -52,7 +52,8 @@ def register():
         if db.create_user(username, password_hash):
             return redirect(url_for('login'))
         else:
-            return "Username already exists."
+            return render_template('register.html',
+                                   error="Username already exists.")
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])

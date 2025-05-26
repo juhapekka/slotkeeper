@@ -241,3 +241,9 @@ body {
 
   .login-btn:hover,
   .register-btn:hover{ filter:brightness(1.1); }
+
+  .error-message{
+    color:#dc3545;
+    margin-bottom:0.8rem;
+    font-weight:600;
+  }
