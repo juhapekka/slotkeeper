@@ -132,16 +132,36 @@ def reserve(device_id):
 
     if request.method == 'POST':
         reserved_until = request.form['reserved_until']
-
         success = db.create_reservation(user['id'], device_id, reserved_until)
         if success:
             return redirect(url_for('index'))
         else:
-            return "Reservation failed."
+            return redirect(url_for('reserve', device_id=device_id))
 
     device = db.get_device_by_id(device_id)
     if device:
-        return render_template('reserve.html', device=device)
+        query = request.args.get('q', '')
+        only_mine = request.args.get('only_mine') == '1'
+        devices = db.search_devices(query) if query else db.get_all_devices()
+
+        device_data = []
+        for d in devices:
+            reservation = db.get_active_reservation_for_device(d['id'])
+            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            if only_mine and not user_owned:
+                continue
+            device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned})
+
+        return render_template(
+            'index.html',
+            username=session['username'],
+            devices=device_data,
+            query=query,
+            only_mine=only_mine,
+            show_reservation_modal=True,
+            modal_device=device,
+            modal_error=None
+        )
     return "Device not found."
 
 @app.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
