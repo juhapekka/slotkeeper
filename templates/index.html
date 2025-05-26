@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% if username %}
     <header class="top-bar">
         <div class="brand">Slotkeeper</div>
       
@@ -26,6 +27,7 @@
             <a href="/logout" class="logout-link">Logout</a>
         </div>
     </header>
+    {% endif %}
     {% if username %}
         <ul>
             <div class="device-container">
