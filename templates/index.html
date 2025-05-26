@@ -35,7 +35,11 @@
                 <div class="card">
               
                   <!--  device headline + description  -->
-                  <div class="device-name">{{ entry.device.name }}</div>
+                  <div class="device-name">{{ entry.device.name }}
+                    <span style="font-weight: normal; font-size: 0.9rem; color: #666;">
+                        — added by {{ entry.device.creator_username }}
+                      </span>
+                  </div>
                   <div>{{ entry.device.description or 'No description' }}</div>
               
                   <!--  small edit / delete icons in top-right  -->

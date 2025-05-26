@@ -48,8 +48,14 @@ class Database:
     def get_all_devices(self):
         conn = self._connect()
         try:
-            devices = conn.execute("SELECT * FROM devices").fetchall()
-            return devices
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT Devices.id, Devices.name, Devices.description,
+                Users.username AS creator_username
+                FROM Devices
+                JOIN Users ON Devices.created_by = Users.id
+                """)
+            return [dict(row) for row in cursor.fetchall()]
         finally:
             conn.close()
 
