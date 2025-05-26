@@ -23,7 +23,10 @@ class Database:
 
     def get_user_by_username(self, username):
         conn = self._connect()
-        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        user = conn.execute("""SELECT * 
+                               FROM users
+                               WHERE username = ?""",
+                            (username,)).fetchone()
         conn.close()
         return user
 
@@ -72,7 +75,9 @@ class Database:
         conn = self._connect()
         search = f'%{query}%'
         devices = conn.execute(
-            "SELECT * FROM devices WHERE name LIKE ? OR description LIKE ?",
+            """SELECT * 
+               FROM devices 
+               WHERE name LIKE ? OR description LIKE ?""",
             (search, search)
         ).fetchall()
         conn.close()
@@ -81,11 +86,10 @@ class Database:
     def create_reservation(self, user_id, device_id, reserved_from, reserved_until):
         conn = self._connect()
         try:
-            reserved_from = int(datetime.fromisoformat(reserved_from).timestamp())
             reserved_until = int(datetime.fromisoformat(reserved_until).timestamp())
             conn.execute(
-                "INSERT INTO reservations (user_id, device_id, reserved_from, reserved_until) VALUES (?, ?, ?, ?)",
-                (user_id, device_id, reserved_from, reserved_until)
+                "INSERT INTO reservations (user_id, device_id, reserved_until) VALUES (?, ?, ?)",
+                (user_id, device_id, reserved_until)
             )
             conn.commit()
             return True
@@ -98,7 +102,11 @@ class Database:
     def get_reservations_by_user(self, user_id):
         conn = self._connect()
         reservations = conn.execute(
-            "SELECT r.*, d.name AS device_name FROM reservations r JOIN devices d ON r.device_id = d.id WHERE r.user_id = ? ORDER BY r.reserved_from DESC",
+            """SELECT r.*, d.name AS device_name 
+               FROM reservations r 
+               JOIN devices d ON r.device_id = d.id 
+               WHERE r.user_id = ? 
+               ORDER BY r.reserved_until DESC""",
             (user_id,)
         ).fetchall()
         conn.close()
@@ -125,15 +133,13 @@ class Database:
     def get_active_reservation_for_device(self, device_id):
         conn = self._connect()
         reservation = conn.execute(
-            """
-            SELECT r.*, u.username 
-            FROM reservations r 
-            JOIN users u ON r.user_id = u.id 
-            WHERE r.device_id = ? 
-            AND r.reserved_until > strftime('%s','now')
-            ORDER BY r.reserved_from 
-            LIMIT 1
-            """,
+            """SELECT r.*, u.username 
+               FROM reservations r 
+               JOIN users u ON r.user_id = u.id 
+               WHERE r.device_id = ? 
+               AND r.reserved_until > strftime('%s','now')
+               ORDER BY r.reserved_until
+               LIMIT 1""",
             (device_id,)
         ).fetchone()
         conn.close()
