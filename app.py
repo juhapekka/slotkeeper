@@ -128,7 +128,30 @@ def edit_device(device_id):
     if device:
         return render_template('edit_device.html', device=device)
     else:
-        return "Device not found."
+        query = request.args.get('q', '')
+        only_mine = request.args.get('only_mine') == '1'
+        devices = db.search_devices(query) if query else db.get_all_devices()
+        user = db.get_user_by_username(session['username'])
+
+        device_data = []
+        for d in devices:
+            reservation = db.get_active_reservation_for_device(d['id'])
+            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            desc = d['description'] or ''
+            lines = desc.splitlines()
+            preview = '\n'.join(lines[:3])
+            if len(desc) > 250 or desc.count('\n') >= 3:
+                preview += "\n..."
+            if only_mine and not user_owned:
+                continue
+            device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned, 'preview': preview})
+
+        return render_template('index.html',
+                           username=session['username'],
+                           devices=device_data,
+                           query=query,
+                           only_mine=only_mine,
+                           modal_error="Device not found.")
 
 @app.route('/delete_device/<int:device_id>', methods=['POST'])
 def delete_device(device_id):

@@ -127,5 +127,16 @@
         </div>
     </div>
     {% endif %}
+    {% if modal_error %}
+    <div class="modal-overlay">
+        <div class="card login-card modal-card">
+        <h2>Error</h2>
+        <p>{{ modal_error }}</p>
+        <p style="margin-top: 2em;">
+            <a href="/" class="login-btn" style="display:inline-block; width:100%;">Close</a>
+        </p>
+        </div>
+    </div>
+    {% endif %}
 </body>
 </html>
