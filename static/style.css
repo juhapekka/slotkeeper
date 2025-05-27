@@ -234,6 +234,7 @@ body {
     text-decoration:none;
     font-weight:600;
     background:#28a745;
+    border-radius: 16px;
     color:#fff;
   }
 
@@ -255,3 +256,25 @@ body {
     z-index:1100;
   }
   .modal-card{ width:460px; }
+
+  .device-description.truncated {
+    max-height: 4.5em; /* about 3 rows */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    cursor: pointer;
+    position: relative;
+  }
+  
+  .device-description.truncated:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .read-more-indicator {
+    position: absolute;
+    bottom: calc(4px - 1.2em);
+    right: 8px;
+    color: #888;
+    font-weight: bold;
+    line-height: 1.2;
+  }

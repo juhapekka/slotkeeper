@@ -9,7 +9,7 @@ app.secret_key = 'super_secret_key'  # Used to sign session cookies
 
 DATABASE = 'database.db'
 
-# Instantiate the Database class
+"""Instantiate the Database class"""
 db = Database(DATABASE)
 
 @app.route('/')
@@ -29,10 +29,25 @@ def index():
         for device in devices:
             reservation = db.get_active_reservation_for_device(device['id'])
             user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            desc = device['description'] or ''
+
+            """cut excessive long description to preview"""
+            lines = desc.splitlines()
+            preview = '\n'.join(lines[:3])
+            if len(desc) > 250 or desc.count('\n') >= 3:
+                preview += "\n..."
+
             if only_mine and not user_owned:
-                continue              # Only show my own reservations.
-            device_data.append({'device': device, 'reservation': reservation, 'user_owned': user_owned})
-        
+                continue              # Only show my own reservations
+
+            device_data.append(
+                {
+                    'device': device,
+                    'reservation': reservation,
+                    'user_owned': user_owned,
+                    'preview': preview
+                }
+            )
         return render_template(
             'index.html',
             username=session['username'],
@@ -175,6 +190,40 @@ def cancel_reservation(reservation_id):
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
     return datetime.fromtimestamp(value).strftime('%Y-%m-%d %H:%M')
+
+@app.route('/device/<int:device_id>')
+def view_device(device_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = db.get_user_by_username(session['username'])
+    if not user:
+        return redirect(url_for('login'))
+
+    modal_device = db.get_device_by_id(device_id)
+    if not modal_device:
+        return "Device not found", 404
+
+    query = request.args.get('q', '')
+    only_mine = request.args.get('only_mine') == '1'
+    devices = db.search_devices(query) if query else db.get_all_devices()
+
+    device_data = []
+    for d in devices:
+        reservation = db.get_active_reservation_for_device(d['id'])
+        user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+        if only_mine and not user_owned:
+            continue
+        device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned})
+
+    return render_template(
+        'index.html',
+        username=session['username'],
+        devices=device_data,
+        query=query,
+        only_mine=only_mine,
+        modal_device=modal_device
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
