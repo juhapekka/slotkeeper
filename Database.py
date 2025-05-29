@@ -13,7 +13,8 @@ class Database:
     def create_user(self, username, password_hash):
         conn = self._connect()
         try:
-            conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+            conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                         (username, password_hash))
             conn.commit()
             return True
         except sqlite3.IntegrityError:
@@ -23,7 +24,7 @@ class Database:
 
     def get_user_by_username(self, username):
         conn = self._connect()
-        user = conn.execute("""SELECT * 
+        user = conn.execute("""SELECT *
                                FROM users
                                WHERE username = ?""",
                             (username,)).fetchone()

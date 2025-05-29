@@ -1,7 +1,7 @@
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from Database import Database
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -28,23 +28,23 @@ def index():
         device_data = []
         for device in devices:
             reservation = db.get_active_reservation_for_device(device['id'])
-            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            owned = reservation and reservation['user_id'] == user['id'] if reservation else False
             desc = device['description'] or ''
 
-            """cut excessive long description to preview"""
+            # cut excessive long description to preview
             lines = desc.splitlines()
             preview = '\n'.join(lines[:3])[:250]
             if len(desc) > 250 or desc.count('\n') >= 3:
                 preview += "\n..."
 
-            if only_mine and not user_owned:
-                continue              # Only show my own reservations
+            if only_mine and not owned:
+                continue # Only show my own reservations
 
             device_data.append(
                 {
                     'device': device,
                     'reservation': reservation,
-                    'user_owned': user_owned,
+                    'user_owned': owned,
                     'preview': preview
                 }
             )
@@ -136,15 +136,18 @@ def edit_device(device_id):
         device_data = []
         for d in devices:
             reservation = db.get_active_reservation_for_device(d['id'])
-            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            owned = reservation and reservation['user_id'] == user['id'] if reservation else False
             desc = d['description'] or ''
             lines = desc.splitlines()
             preview = '\n'.join(lines[:3])
             if len(desc) > 250 or desc.count('\n') >= 3:
                 preview += "\n..."
-            if only_mine and not user_owned:
+            if only_mine and not owned:
                 continue
-            device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned, 'preview': preview})
+            device_data.append({'device': d,
+                                'reservation': reservation,
+                                'user_owned': owned,
+                                'preview': preview})
 
         return render_template('index.html',
                            username=session['username'],
@@ -185,10 +188,10 @@ def reserve(device_id):
         device_data = []
         for d in devices:
             reservation = db.get_active_reservation_for_device(d['id'])
-            user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
-            if only_mine and not user_owned:
+            owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+            if only_mine and not owned:
                 continue
-            device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned})
+            device_data.append({'device': d, 'reservation': reservation, 'user_owned': owned})
 
         return render_template(
             'index.html',
@@ -250,4 +253,3 @@ def view_device(device_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
