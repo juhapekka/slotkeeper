@@ -26,6 +26,7 @@ CREATE TABLE reservations (
     device_id INTEGER NOT NULL,
     reserved_until INTEGER NOT NULL,
     created_at INTEGER DEFAULT (strftime('%s','now')),
+    ended_at INTEGER DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (device_id) REFERENCES devices(id)
 );

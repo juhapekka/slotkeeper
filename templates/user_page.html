@@ -43,6 +43,20 @@
                     <p>No devices created.</p>
                 {% endif %}
             </div>
+            <div class="user-block">
+                <h3>Recent Reservations</h3>
+                <ul class="device-list">
+                {% for r in last_reservations %}
+                    <li>
+                    {% if r[1] %}
+                        {{ r[1] }} - until {{ r[2]|datetimeformat }}
+                    {% else %}
+                        [Device deleted] - until {{ r[2]|datetimeformat }}
+                    {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 </body>

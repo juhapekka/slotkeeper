@@ -258,10 +258,12 @@ def user_page():
     username = session['username']
     reservations = db.get_active_reservations_by_user(username)
     devices = db.get_devices_created_by_user(username)
+    last_reservations = db.get_last_reservations_by_user(username)
     return render_template("user_page.html",
                            username=username,
                            reservations=reservations,
-                           devices=devices)
+                           devices=devices,
+                           last_reservations=last_reservations)
 
 if __name__ == '__main__':
     app.run(debug=True)

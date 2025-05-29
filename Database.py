@@ -124,7 +124,7 @@ class Database:
     def get_active_reservations_for_device(self, device_id, current_time):
         conn = self._connect()
         reservations = conn.execute(
-            "SELECT * FROM reservations WHERE device_id = ? AND reserved_until > ?",
+            "SELECT * FROM reservations WHERE device_id = ? AND reserved_until > ?  AND ended_at IS NULL",
             (device_id, current_time)
         ).fetchall()
         conn.close()
@@ -133,9 +133,10 @@ class Database:
     def cancel_reservation(self, reservation_id, user_id):
         conn = self._connect()
         conn.execute(
-            "DELETE FROM reservations WHERE id = ? AND user_id = ?",
-            (reservation_id, user_id)
-        )
+            """UPDATE reservations 
+               SET ended_at = strftime('%s','now')
+               WHERE id = ?""",
+            (reservation_id,))
         conn.commit()
         conn.close()
 
@@ -146,7 +147,7 @@ class Database:
                FROM reservations r 
                JOIN users u ON r.user_id = u.id 
                WHERE r.device_id = ? 
-               AND r.reserved_until > strftime('%s','now')
+               AND r.reserved_until > strftime('%s','now') AND ended_at IS NULL
                ORDER BY r.reserved_until
                LIMIT 1""",
             (device_id,)
@@ -161,7 +162,8 @@ class Database:
                FROM reservations r
                JOIN devices d ON r.device_id = d.id
                JOIN users u ON r.user_id = u.id
-               WHERE u.username = ? AND r.reserved_until > strftime('%s', 'now')""",
+               WHERE u.username = ? AND r.reserved_until > strftime('%s', 'now')
+               AND ended_at IS NULL""",
             (username,))
         results = cursor.fetchall()
         conn.close()
@@ -175,6 +177,26 @@ class Database:
                JOIN users u ON d.created_by = u.id
                WHERE u.username = ?""",
             (username,))
+        results = cursor.fetchall()
+        conn.close()
+        return results
+
+    def get_last_reservations_by_user(self, username, limit=10):
+        conn = self._connect()
+        cursor = conn.execute(
+            """SELECT r.id, d.name, 
+                   CASE 
+                       WHEN r.ended_at IS NOT NULL THEN r.ended_at 
+                       ELSE r.reserved_until 
+                   END AS effective_end,
+                   r.created_at
+               FROM reservations r
+               LEFT JOIN devices d ON r.device_id = d.id
+               JOIN users u ON r.user_id = u.id
+               WHERE u.username = ?
+               ORDER BY r.created_at DESC
+               LIMIT ?""",
+            (username, limit))
         results = cursor.fetchall()
         conn.close()
         return results
