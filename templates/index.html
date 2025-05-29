@@ -47,6 +47,7 @@
                   <div class="card-header-icons">
                     <a href="/edit_device/{{ entry.device.id }}" title="Edit">✏️</a>
                     <form method="post" action="/delete_device/{{ entry.device.id }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                       <button title="Delete">🗑️</button>
                     </form>
                   </div>
@@ -59,6 +60,7 @@
               
                       {% if entry.user_owned %}
                         <form method="post" action="/cancel_reservation/{{ entry.reservation.id }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                           <button>Release</button>
                         </form>
                       {% endif %}
@@ -95,6 +97,7 @@
             <div class="error-message">{{ modal_error }}</div>
             {% endif %}
             <form method="post" action="{{ url_for('reserve', device_id=modal_device.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label style="font-weight:600;">Until:</label>
             <div style="margin:0.8rem 0 1.2rem 0;">
                 <input type="datetime-local" name="reserved_until" required

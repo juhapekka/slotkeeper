@@ -17,6 +17,7 @@
       {% endif %}
 
       <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div style="margin-bottom:0.8rem;">
           <input type="text" name="name" placeholder="Device name" required
                  style="width:100%; padding:8px; box-sizing:border-box;" maxlength="32">
@@ -36,6 +37,5 @@
 
     </div>
   </div>
-
 </body>
 </html>
