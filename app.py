@@ -33,7 +33,7 @@ def index():
 
             """cut excessive long description to preview"""
             lines = desc.splitlines()
-            preview = '\n'.join(lines[:3])
+            preview = '\n'.join(lines[:3])[:250]
             if len(desc) > 250 or desc.count('\n') >= 3:
                 preview += "\n..."
 
