@@ -8,7 +8,7 @@
 <body>
     {% if username %}
     <header class="top-bar">
-        <div class="brand">Slotkeeper</div>
+        <div class="brand"><a href="/">Slotkeeper</a></div>
       
         <form class="search-form" method="get" action="/">
             <input type="text" name="q" placeholder="Search…" value="{{ query or '' }}">
@@ -23,7 +23,7 @@
       
         <div class="top-links">
             <a href="/add_device">Add device</a>
-            <span class="username">{{ username }}</span>
+            <a href="{{ url_for('user_page') }}" class="user-button">{{ username }}</a>
             <a href="/logout" class="logout-link">Logout</a>
         </div>
     </header>

@@ -291,8 +291,7 @@ body {
 }
 
 .device-description.truncated {
-    max-height: 4.5em;
-    /* about 3 rows */
+    max-height: 4.5em; /* about 3 rows */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: pre-wrap;
@@ -311,4 +310,41 @@ body {
     color: #888;
     font-weight: bold;
     line-height: 1.2;
+}
+
+.user-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+}
+
+.user-block {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.user-block h3 {
+    margin-top: 0;
+    color: #f0f0f0;
+}
+
+.device-list {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-top: 10px;
+    color: #ddd;
+}
+
+.brand a {
+    color: white;
+    text-decoration: none;
+}
+
+.brand a:hover {
+    text-decoration: underline;
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="top-bar">
+        <div class="brand"><a href="/">Slotkeeper</a></div>    
+        <div class="top-links">
+            <a href="/add_device">Add device</a>
+            <a href="{{ url_for('user_page') }}" class="user-button">{{ username }}</a>
+            <a href="/logout" class="logout-link">Logout</a>
+        </div>
+    </header>
+    <div class="content-container">
+        <div class="user-section">
+            <h2>{{ username }}'s Dashboard</h2>
+
+            <div class="user-block">
+                <h3>Current Reservations</h3>
+                {% if reservations %}
+                    <ul class="device-list">
+                    {% for r in reservations %}
+                        <li>{{ r[1] }} (until {{ r[2] | datetimeformat }})</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No active reservations.</p>
+                {% endif %}
+            </div>
+
+            <div class="user-block">
+                <h3>Devices Created</h3>
+                {% if devices %}
+                    <ul class="device-list">
+                    {% for d in devices %}
+                        <li>{{ d[1] }} - {{ d[2] }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No devices created.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

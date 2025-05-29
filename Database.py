@@ -153,3 +153,28 @@ class Database:
         ).fetchone()
         conn.close()
         return reservation
+
+    def get_active_reservations_by_user(self, username):
+        conn = self._connect()
+        cursor = conn.execute(
+            """SELECT r.id, d.name, r.reserved_until
+               FROM reservations r
+               JOIN devices d ON r.device_id = d.id
+               JOIN users u ON r.user_id = u.id
+               WHERE u.username = ? AND r.reserved_until > strftime('%s', 'now')""",
+            (username,))
+        results = cursor.fetchall()
+        conn.close()
+        return results
+
+    def get_devices_created_by_user(self, username):
+        conn = self._connect()
+        cursor = conn.execute(
+            """SELECT d.id, d.name, d.description
+               FROM devices d
+               JOIN users u ON d.created_by = u.id
+               WHERE u.username = ?""",
+            (username,))
+        results = cursor.fetchall()
+        conn.close()
+        return results

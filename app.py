@@ -251,5 +251,17 @@ def view_device(device_id):
         modal_device=modal_device
     )
 
+@app.route("/user")
+def user_page():
+    if 'username' not in session:
+        return redirect(url_for('index'))
+    username = session['username']
+    reservations = db.get_active_reservations_by_user(username)
+    devices = db.get_devices_created_by_user(username)
+    return render_template("user_page.html",
+                           username=username,
+                           reservations=reservations,
+                           devices=devices)
+
 if __name__ == '__main__':
     app.run(debug=True)
