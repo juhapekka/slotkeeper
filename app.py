@@ -3,6 +3,7 @@ import uuid
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from Database import Database
+import config
 
 app = Flask(__name__)
 
@@ -12,7 +13,7 @@ def generate_csrf_token():
     session['csrf_token'] = token
     return token
 
-app.secret_key = 'super_secret_key'  # Used to sign session cookies
+app.secret_key = config.secret_key  # Used to sign session cookies
 
 DATABASE = 'database.db'
 
