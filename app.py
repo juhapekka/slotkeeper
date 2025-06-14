@@ -13,6 +13,10 @@ def generate_csrf_token():
     session['csrf_token'] = token
     return token
 
+def check_csrf_token(form):
+    token = form.get('csrf_token')
+    return token and token == session.get('csrf_token')
+
 app.secret_key = config.secret_key  # Used to sign session cookies
 
 DATABASE = 'database.db'
@@ -71,9 +75,8 @@ def index():
 def register():
     '''Handle registration'''
     if request.method == 'POST':
-        token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return 'Invalid CSRF token', 400
+        if not check_csrf_token(request.form):
+            return "Invalid CSRF token", 400
 
         username = request.form['username']
         password = request.form['password']
@@ -91,9 +94,8 @@ def register():
 def login():
     '''Handle login'''
     if request.method == 'POST':
-        token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return 'Invalid CSRF token', 400
+        if not check_csrf_token(request.form):
+            return "Invalid CSRF token", 400
 
         username = request.form['username']
         password = request.form['password']
@@ -123,10 +125,8 @@ def add_device():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return 'Invalid CSRF token', 400
-
+        if not check_csrf_token(request.form):
+            return "Invalid CSRF token", 400
         name = request.form['name']
         description = request.form['description']
         user = db.get_user_by_username(session['username'])
@@ -147,9 +147,8 @@ def edit_device(device_id):
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return 'Invalid CSRF token', 400
+        if not check_csrf_token(request.form):
+            return "Invalid CSRF token", 400
 
         name = request.form['name']
         description = request.form['description']
@@ -192,9 +191,8 @@ def edit_device(device_id):
 @app.route('/delete_device/<int:device_id>', methods=['POST'])
 def delete_device(device_id):
     '''Handle deleting device from UI'''
-    token = request.form.get('csrf_token')
-    if not token or token != session.get('csrf_token'):
-        return 'Invalid CSRF token', 400
+    if not check_csrf_token(request.form):
+        return "Invalid CSRF token", 400
 
     if 'username' in session:
         db.delete_device(device_id)
@@ -211,9 +209,8 @@ def reserve(device_id):
         return 'Error: User not found.'
 
     if request.method == 'POST':
-        token = request.form.get('csrf_token')
-        if not token or token != session.get('csrf_token'):
-            return 'Invalid CSRF token', 400
+        if not check_csrf_token(request.form):
+            return "Invalid CSRF token", 400
 
         reserved_until = request.form['reserved_until']
         success = db.create_reservation(user['id'], device_id, reserved_until)
@@ -253,9 +250,8 @@ def reserve(device_id):
 @app.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
 def cancel_reservation(reservation_id):
     '''Handle releasing reservation from UI'''
-    token = request.form.get('csrf_token')
-    if not token or token != session.get('csrf_token'):
-        return 'Invalid CSRF token', 400
+    if not check_csrf_token(request.form):
+        return "Invalid CSRF token", 400
 
     if 'username' not in session:
         return redirect(url_for('login'))
