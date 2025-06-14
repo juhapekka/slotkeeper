@@ -8,7 +8,7 @@ import config
 app = Flask(__name__)
 
 def generate_csrf_token():
-    """UUID for csrf token"""
+    '''UUID for csrf token'''
     token = str(uuid.uuid4())
     session['csrf_token'] = token
     return token
@@ -17,12 +17,12 @@ app.secret_key = config.secret_key  # Used to sign session cookies
 
 DATABASE = 'database.db'
 
-"""Instantiate the Database class"""
+'''Instantiate the Database class'''
 db = Database(DATABASE)
 
 @app.route('/')
 def index():
-    """Base index.html rendering"""
+    '''Base index.html rendering'''
     if 'username' in session:
         query = request.args.get('q', '')
         if query:
@@ -44,7 +44,7 @@ def index():
             lines = desc.splitlines()
             preview = '\n'.join(lines[:3])[:250]
             if len(desc) > 250 or desc.count('\n') >= 3:
-                preview += "\n..."
+                preview += '\n...'
 
             if only_mine and not owned:
                 continue # Only show my own reservations
@@ -69,11 +69,11 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Handle registration"""
+    '''Handle registration'''
     if request.method == 'POST':
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            return "Invalid CSRF token", 400
+        token = request.form.get('csrf_token')
+        if not token or token != session.get('csrf_token'):
+            return 'Invalid CSRF token', 400
 
         username = request.form['username']
         password = request.form['password']
@@ -83,17 +83,17 @@ def register():
             return redirect(url_for('login'))
 
         return render_template('register.html',
-                                error="Username already exists.")
+                                error='Username already exists.')
     csrf_token = generate_csrf_token()
     return render_template('register.html', csrf_token=csrf_token)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handle login"""
+    '''Handle login'''
     if request.method == 'POST':
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            return "Invalid CSRF token", 400
+        token = request.form.get('csrf_token')
+        if not token or token != session.get('csrf_token'):
+            return 'Invalid CSRF token', 400
 
         username = request.form['username']
         password = request.form['password']
@@ -105,27 +105,27 @@ def login():
             return redirect(url_for('index'))
 
         return render_template('login.html',
-                                error="Invalid username or password.")
+                                error='Invalid username or password.')
 
     csrf_token = generate_csrf_token()
     return render_template('login.html', csrf_token=csrf_token)
 
 @app.route('/logout')
 def logout():
-    """Log out.."""
+    '''Log out..'''
     session.pop('username', None)
     return redirect(url_for('index'))
 
 @app.route('/add_device', methods=['GET', 'POST'])
 def add_device():
-    """Handle adding new device from UI"""
+    '''Handle adding new device from UI'''
     if 'username' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            return "Invalid CSRF token", 400
+        token = request.form.get('csrf_token')
+        if not token or token != session.get('csrf_token'):
+            return 'Invalid CSRF token', 400
 
         name = request.form['name']
         description = request.form['description']
@@ -135,21 +135,21 @@ def add_device():
             db.add_device(name, description, user['id'])
             return redirect(url_for('index'))
 
-        return "Error: Logged-in user not found."
+        return 'Error: Logged-in user not found.'
 
     csrf_token = generate_csrf_token()
     return render_template('add_device.html', csrf_token=csrf_token)
 
 @app.route('/edit_device/<int:device_id>', methods=['GET', 'POST'])
 def edit_device(device_id):
-    """Handle editing device from UI"""
+    '''Handle editing device from UI'''
     if 'username' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            return "Invalid CSRF token", 400
+        token = request.form.get('csrf_token')
+        if not token or token != session.get('csrf_token'):
+            return 'Invalid CSRF token', 400
 
         name = request.form['name']
         description = request.form['description']
@@ -174,7 +174,7 @@ def edit_device(device_id):
         lines = desc.splitlines()
         preview = '\n'.join(lines[:3])
         if len(desc) > 250 or desc.count('\n') >= 3:
-            preview += "\n..."
+            preview += '\n...'
         if only_mine and not owned:
             continue
         device_data.append({'device': d,
@@ -187,14 +187,14 @@ def edit_device(device_id):
                             devices=device_data,
                             query=query,
                             only_mine=only_mine,
-                            modal_error="Device not found.")
+                            modal_error='Device not found.')
 
 @app.route('/delete_device/<int:device_id>', methods=['POST'])
 def delete_device(device_id):
-    """Handle deleting device from UI"""
-    token = request.form.get("csrf_token")
-    if not token or token != session.get("csrf_token"):
-        return "Invalid CSRF token", 400
+    '''Handle deleting device from UI'''
+    token = request.form.get('csrf_token')
+    if not token or token != session.get('csrf_token'):
+        return 'Invalid CSRF token', 400
 
     if 'username' in session:
         db.delete_device(device_id)
@@ -202,18 +202,18 @@ def delete_device(device_id):
 
 @app.route('/reserve/<int:device_id>', methods=['GET', 'POST'])
 def reserve(device_id):
-    """Handle reserve device from UI"""
+    '''Handle reserve device from UI'''
     if 'username' not in session:
         return redirect(url_for('login'))
 
     user = db.get_user_by_username(session['username'])
     if not user:
-        return "Error: User not found."
+        return 'Error: User not found.'
 
     if request.method == 'POST':
-        token = request.form.get("csrf_token")
-        if not token or token != session.get("csrf_token"):
-            return "Invalid CSRF token", 400
+        token = request.form.get('csrf_token')
+        if not token or token != session.get('csrf_token'):
+            return 'Invalid CSRF token', 400
 
         reserved_until = request.form['reserved_until']
         success = db.create_reservation(user['id'], device_id, reserved_until)
@@ -248,14 +248,14 @@ def reserve(device_id):
             modal_error=None,
             csrf_token = csrf_token
         )
-    return "Device not found."
+    return 'Device not found.'
 
 @app.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
 def cancel_reservation(reservation_id):
-    """Handle releasing reservation from UI"""
-    token = request.form.get("csrf_token")
-    if not token or token != session.get("csrf_token"):
-        return "Invalid CSRF token", 400
+    '''Handle releasing reservation from UI'''
+    token = request.form.get('csrf_token')
+    if not token or token != session.get('csrf_token'):
+        return 'Invalid CSRF token', 400
 
     if 'username' not in session:
         return redirect(url_for('login'))
@@ -265,12 +265,12 @@ def cancel_reservation(reservation_id):
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
-    """Simple datetime formatter"""
+    '''Simple datetime formatter'''
     return datetime.fromtimestamp(value).strftime('%Y-%m-%d %H:%M')
 
 @app.route('/device/<int:device_id>')
 def view_device(device_id):
-    """Detail view of device"""
+    '''Detail view of device'''
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -280,7 +280,7 @@ def view_device(device_id):
 
     modal_device = db.get_device_by_id(device_id)
     if not modal_device:
-        return "Device not found", 404
+        return 'Device not found', 404
 
     query = request.args.get('q', '')
     only_mine = request.args.get('only_mine') == '1'
@@ -303,16 +303,16 @@ def view_device(device_id):
         modal_device=modal_device
     )
 
-@app.route("/user")
+@app.route('/user')
 def user_page():
-    """Show user page on UI"""
+    '''Show user page on UI'''
     if 'username' not in session:
         return redirect(url_for('index'))
     username = session['username']
     reservations = db.get_active_reservations_by_user(username)
     devices = db.get_devices_created_by_user(username)
     last_reservations = db.get_last_reservations_by_user(username)
-    return render_template("user_page.html",
+    return render_template('user_page.html',
                            username=username,
                            reservations=reservations,
                            devices=devices,

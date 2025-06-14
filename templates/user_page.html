@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
+    <meta charset='UTF-8'>
     <title>User Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel='stylesheet' href='{{ url_for('static', filename='style.css') }}'>
 </head>
 <body>
-    <header class="top-bar">
-        <div class="brand"><a href="/">Slotkeeper</a></div>    
-        <div class="top-links">
-            <a href="/add_device">Add device</a>
-            <a href="{{ url_for('user_page') }}" class="user-button">{{ username }}</a>
-            <a href="/logout" class="logout-link">Logout</a>
+    <header class='top-bar'>
+        <div class='brand'><a href='/'>Slotkeeper</a></div>    
+        <div class='top-links'>
+            <a href='/add_device'>Add device</a>
+            <a href='{{ url_for('user_page') }}' class='user-button'>{{ username }}</a>
+            <a href='/logout' class='logout-link'>Logout</a>
         </div>
     </header>
-    <div class="content-container">
-        <div class="user-section">
+    <div class='content-container'>
+        <div class='user-section'>
             <h2>{{ username }}'s Dashboard</h2>
 
-            <div class="user-block">
+            <div class='user-block'>
                 <h3>Current Reservations</h3>
                 {% if reservations %}
-                    <ul class="device-list">
+                    <ul class='device-list'>
                     {% for r in reservations %}
                         <li>{{ r[1] }} (until {{ r[2] | datetimeformat }})</li>
                     {% endfor %}
@@ -31,10 +31,10 @@
                 {% endif %}
             </div>
 
-            <div class="user-block">
+            <div class='user-block'>
                 <h3>Devices Created</h3>
                 {% if devices %}
-                    <ul class="device-list">
+                    <ul class='device-list'>
                     {% for d in devices %}
                         <li>{{ d[1] }} - {{ d[2] }}</li>
                     {% endfor %}
@@ -43,9 +43,9 @@
                     <p>No devices created.</p>
                 {% endif %}
             </div>
-            <div class="user-block">
+            <div class='user-block'>
                 <h3>Recent Reservations</h3>
-                <ul class="device-list">
+                <ul class='device-list'>
                 {% for r in last_reservations %}
                     <li>
                     {% if r[1] %}

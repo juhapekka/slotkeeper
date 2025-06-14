@@ -168,7 +168,7 @@ body {
     display: flex;
 }
 
-.top-bar .search-form input[type="text"] {
+.top-bar .search-form input[type='text'] {
     width: 100%;
     padding: 6px 10px;
     border: none;
