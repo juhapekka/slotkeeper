@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 import uuid
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +15,7 @@ def generate_csrf_token():
     return token
 
 def check_csrf_token(form):
+    '''Check csrf token'''
     token = form.get('csrf_token')
     return token and token == session.get('csrf_token')
 
@@ -76,11 +78,23 @@ def register():
     '''Handle registration'''
     if request.method == 'POST':
         if not check_csrf_token(request.form):
-            return "Invalid CSRF token", 400
+            return 'Invalid CSRF token', 400
 
         username = request.form['username']
         password = request.form['password']
         password_hash = generate_password_hash(password)
+
+        if not username or not password:
+            return render_template('register.html',
+                                   error='Username and password are required.')
+
+        if len(username) > 32:
+            return render_template('register.html',
+                                   error='Username too long (max 32 characters).')
+
+        if len(password) < 6:
+            return render_template('register.html',
+                                   error='Password too short (min 6 characters).')
 
         if db.create_user(username, password_hash):
             return redirect(url_for('login'))
@@ -95,7 +109,8 @@ def login():
     '''Handle login'''
     if request.method == 'POST':
         if not check_csrf_token(request.form):
-            return "Invalid CSRF token", 400
+            return render_template('login.html',
+                                   error='Invalid CSRF token.')
 
         username = request.form['username']
         password = request.form['password']
@@ -126,16 +141,28 @@ def add_device():
 
     if request.method == 'POST':
         if not check_csrf_token(request.form):
-            return "Invalid CSRF token", 400
+            return 'Invalid CSRF token', 400
         name = request.form['name']
         description = request.form['description']
         user = db.get_user_by_username(session['username'])
+
+        if not name:
+            return render_template('add_device.html', error='Device name is required.')
+
+        if len(name) > 32:
+            return render_template('add_device.html',
+                                   error='Device name too long (max 32 characters).')
+
+        if len(description) > 4096:
+            return render_template('add_device.html',
+                                   error='Description too long (max 4096 characters).')
 
         if user:
             db.add_device(name, description, user['id'])
             return redirect(url_for('index'))
 
-        return 'Error: Logged-in user not found.'
+        return render_template('add_device.html',
+                               error='Error: Logged-in user not found.')
 
     csrf_token = generate_csrf_token()
     return render_template('add_device.html', csrf_token=csrf_token)
@@ -148,7 +175,7 @@ def edit_device(device_id):
 
     if request.method == 'POST':
         if not check_csrf_token(request.form):
-            return "Invalid CSRF token", 400
+            return 'Invalid CSRF token', 400
 
         name = request.form['name']
         description = request.form['description']
@@ -186,13 +213,13 @@ def edit_device(device_id):
                             devices=device_data,
                             query=query,
                             only_mine=only_mine,
-                            modal_error='Device not found.')
+                            error='Device not found.')
 
 @app.route('/delete_device/<int:device_id>', methods=['POST'])
 def delete_device(device_id):
     '''Handle deleting device from UI'''
     if not check_csrf_token(request.form):
-        return "Invalid CSRF token", 400
+        return 'Invalid CSRF token', 400
 
     if 'username' in session:
         db.delete_device(device_id)
@@ -210,9 +237,18 @@ def reserve(device_id):
 
     if request.method == 'POST':
         if not check_csrf_token(request.form):
-            return "Invalid CSRF token", 400
+            return 'Invalid CSRF token', 400
 
         reserved_until = request.form['reserved_until']
+
+        try:
+            reserved_until = int(datetime.strptime(request.form['reserved_until'],
+                                                   '%Y-%m-%dT%H:%M').timestamp())
+            if reserved_until <= time.time():
+                return 'Reservation must be in the future.', 400
+        except Exception:
+            return 'Invalid reservation time format', 400
+
         success = db.create_reservation(user['id'], device_id, reserved_until)
         if success:
             return redirect(url_for('index'))
@@ -251,7 +287,7 @@ def reserve(device_id):
 def cancel_reservation(reservation_id):
     '''Handle releasing reservation from UI'''
     if not check_csrf_token(request.form):
-        return "Invalid CSRF token", 400
+        return 'Invalid CSRF token', 400
 
     if 'username' not in session:
         return redirect(url_for('login'))
