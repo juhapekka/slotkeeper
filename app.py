@@ -242,9 +242,8 @@ def reserve(device_id):
         reserved_until = request.form['reserved_until']
 
         try:
-            reserved_until = int(datetime.strptime(request.form['reserved_until'],
-                                                   '%Y-%m-%dT%H:%M').timestamp())
-            if reserved_until <= time.time():
+            reserved_int = int(datetime.strptime(reserved_until, '%Y-%m-%dT%H:%M').timestamp())
+            if reserved_int <= time.time():
                 return 'Reservation must be in the future.', 400
         except Exception:
             return 'Invalid reservation time format', 400
