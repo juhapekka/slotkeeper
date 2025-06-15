@@ -21,6 +21,7 @@ def check_csrf_token(form):
     return token and token == session.get('csrf_token')
 
 def login_required_with_csrf(f):
+    '''wrapper to check login and for POST csrf status'''
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'username' not in session:
@@ -34,7 +35,8 @@ def login_required_with_csrf(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def fill_in_device_list(devices, only_mine):
+def fill_in_device_list(devices):
+    '''build device list for ui'''
     device_data = []
     user = db.get_user_by_username(session['username'])
 
@@ -48,9 +50,6 @@ def fill_in_device_list(devices, only_mine):
         preview = '\n'.join(lines[:3])[:250]
         if len(desc) > 250 or desc.count('\n') >= 3:
             preview += '\n...'
-
-        if only_mine and not owned:
-            continue # Only show my own reservations
 
         device_data.append(
             {
@@ -73,16 +72,13 @@ db = Database(DATABASE)
 def index():
     '''Base index.html rendering'''
     if 'username' in session:
-        query = request.args.get('q', '')
-        if query:
-            devices = db.search_devices(query)
-        else:
-            devices = db.get_all_devices()
+        user = db.get_user_by_username(session['username'])
+        user_id = user['id'] if user else None
 
         query = request.args.get('q', '')
         only_mine = request.args.get('only_mine') == '1'
-
-        device_data = fill_in_device_list(devices, only_mine)
+        devices = db.search_devices(query, user_id, only_mine)
+        device_data = fill_in_device_list(devices)
 
         csrf_token = generate_csrf_token()
         return render_template(
@@ -225,6 +221,7 @@ def reserve(device_id):
     user = db.get_user_by_username(session['username'])
     if not user:
         return 'Error: User not found.'
+    user_id = user['id'] if user else None
 
     if request.method == 'POST':
         reserved_until = request.form['reserved_until']
@@ -256,9 +253,8 @@ def reserve(device_id):
     if device:
         query = request.args.get('q', '')
         only_mine = request.args.get('only_mine') == '1'
-        devices = db.search_devices(query) if query else db.get_all_devices()
-
-        device_data = fill_in_device_list(devices, only_mine)
+        devices = db.search_devices(query, user_id, only_mine)
+        device_data = fill_in_device_list(devices)
 
         csrf_token = generate_csrf_token()
         return render_template(
@@ -299,6 +295,7 @@ def view_device(device_id):
     user = db.get_user_by_username(session['username'])
     if not user:
         return redirect(url_for('login'))
+    user_id = user['id']
 
     modal_device = db.get_device_by_id(device_id)
     if not modal_device:
@@ -313,9 +310,9 @@ def view_device(device_id):
 
     query = request.args.get('q', '')
     only_mine = request.args.get('only_mine') == '1'
-    devices = db.search_devices(query) if query else db.get_all_devices()
+    devices = db.search_devices(query, user_id, only_mine)
 
-    device_data = fill_in_device_list(devices, only_mine)
+    device_data = fill_in_device_list(devices)
 
     error_message = request.args.get('error')
     csrf_token = generate_csrf_token()

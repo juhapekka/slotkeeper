@@ -72,25 +72,72 @@ class Database:
         conn.commit()
         conn.close()
 
-    def search_devices(self, query=None):
+    def search_devices(self, query=None, user_id=None, owned=False):
         conn = self._connect()
         search = f'%{query}%' if query else '%'
+        params = [search, search]
+
+        clauses = ['(d.name LIKE ? OR d.description LIKE ?)']
+
+        if owned and user_id:
+            clauses.append('''
+                EXISTS (
+                    SELECT 1 FROM reservations r_check
+                    WHERE r_check.device_id = d.id
+                    AND r_check.user_id = ?
+                    AND r_check.reserved_until > strftime('%s', 'now')
+                    AND r_check.ended_at IS NULL
+                )
+            ''')
+            params.append(user_id)
+
+        where_sql = ' AND '.join(clauses)
+
+        sql = f'''
+        WITH RankedReservations AS (
+            SELECT
+                r.id, r.device_id, r.user_id, r.reserved_until,
+                u.username AS reserver_username,
+                ROW_NUMBER() OVER (PARTITION BY r.device_id ORDER BY r.reserved_until ASC) as rn
+            FROM reservations r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.reserved_until > strftime('%s', 'now') AND r.ended_at IS NULL
+        )
+        SELECT
+            d.id, d.name, d.description, d.created_at,
+            u_creator.username AS creator_username,
+            COALESCE(rr_current_user.is_current_user_reservation, 0) AS current_user_has_reservation,
+            rr_any_user.id AS reservation_id,
+            rr_any_user.user_id AS reservation_user_id,
+            rr_any_user.reserved_until AS reservation_reserved_until,
+            rr_any_user.reserver_username AS reservation_username
+        FROM devices d
+        JOIN users u_creator ON d.created_by = u_creator.id
+        LEFT JOIN (
+            SELECT device_id, 1 AS is_current_user_reservation
+            FROM RankedReservations
+            WHERE user_id = ? AND rn = 1
+        ) AS rr_current_user ON d.id = rr_current_user.device_id
+        LEFT JOIN (
+            SELECT * FROM RankedReservations WHERE rn = 1
+        ) AS rr_any_user ON d.id = rr_any_user.device_id
+        WHERE {where_sql}
+        ORDER BY d.id ASC;
+        '''
+
         try:
-            cursor = conn.cursor()
-            cursor.execute(
-                '''SELECT d.id, d.name, d.description, u.username AS creator_username
-                   FROM devices d
-                   JOIN users u ON d.created_by = u.id
-                   WHERE d.name LIKE ? OR d.description LIKE ?
-                   ORDER BY d.id ASC''',
-                (search, search)
-            )
+            params.append(user_id if user_id else 0)
+
+            cursor = conn.execute(sql, params)
             return [dict(row) for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            print('search_devices failed:', e)
+            return []
         finally:
             conn.close()
 
-    def get_all_devices(self):
-        return self.search_devices()
+    def get_all_devices(self, user_id=None, owned=False):
+        return self.search_devices(query=None, user_id=user_id, owned=owned)
 
     def create_reservation(self, user_id, device_id, reserved_until):
         conn = self._connect()
