@@ -46,20 +46,6 @@ class Database:
         finally:
             conn.close()
 
-    def get_all_devices(self):
-        conn = self._connect()
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT Devices.id, Devices.name, Devices.description,
-                Users.username AS creator_username
-                FROM Devices
-                JOIN Users ON Devices.created_by = Users.id
-                ''')
-            return [dict(row) for row in cursor.fetchall()]
-        finally:
-            conn.close()
-
     def get_device_by_id(self, device_id):
         conn = self._connect()
         device = conn.execute('SELECT * FROM devices WHERE id = ?', (device_id,)).fetchone()
@@ -80,17 +66,25 @@ class Database:
         conn.commit()
         conn.close()
 
-    def search_devices(self, query):
+    def search_devices(self, query=None):
         conn = self._connect()
-        search = f'%{query}%'
-        devices = conn.execute(
-            '''SELECT * 
-               FROM devices 
-               WHERE name LIKE ? OR description LIKE ?''',
-            (search, search)
-        ).fetchall()
-        conn.close()
-        return devices
+        search = f'%{query}%' if query else '%'
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                '''SELECT d.id, d.name, d.description, u.username AS creator_username
+                   FROM devices d
+                   JOIN users u ON d.created_by = u.id
+                   WHERE d.name LIKE ? OR d.description LIKE ?
+                   ORDER BY d.id ASC''',
+                (search, search)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
+    def get_all_devices(self):
+        return self.search_devices()
 
     def create_reservation(self, user_id, device_id, reserved_until):
         conn = self._connect()
