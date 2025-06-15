@@ -43,4 +43,4 @@ $ flask run
 - ✅ Käyttäjäsivu näyttää, onko käyttäjällä voimassa olevia varauksia testikoneille.
 - ✅ Käyttäjä pystyy varaamaan testikoneen määräajaksi.
 - ✅ Käyttäjä pystyy vapauttamaan varaamansa testikoneen.
-- ❌ Käyttäjä pystyy antamaan testikoneelle kommentin. Testikoneesta näytetään kommentit.
+- ✅ Käyttäjä pystyy antamaan testikoneelle kommentin. Testikoneesta näytetään kommentit.
