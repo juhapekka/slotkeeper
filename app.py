@@ -34,6 +34,34 @@ def login_required_with_csrf(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def fill_in_device_list(devices, only_mine):
+    device_data = []
+    user = db.get_user_by_username(session['username'])
+
+    for device in devices:
+        reservation = db.get_active_reservation_for_device(device['id'])
+        owned = reservation and reservation['user_id'] == user['id'] if reservation else False
+        desc = device['description'] or ''
+
+        # cut excessive long description to preview
+        lines = desc.splitlines()
+        preview = '\n'.join(lines[:3])[:250]
+        if len(desc) > 250 or desc.count('\n') >= 3:
+            preview += '\n...'
+
+        if only_mine and not owned:
+            continue # Only show my own reservations
+
+        device_data.append(
+            {
+                'device': device,
+                'reservation': reservation,
+                'user_owned': owned,
+                'preview': preview
+            }
+        )
+    return device_data
+
 app.secret_key = config.secret_key  # Used to sign session cookies
 
 DATABASE = 'database.db'
@@ -50,34 +78,12 @@ def index():
             devices = db.search_devices(query)
         else:
             devices = db.get_all_devices()
-        user = db.get_user_by_username(session['username'])
 
         query = request.args.get('q', '')
         only_mine = request.args.get('only_mine') == '1'
 
-        device_data = []
-        for device in devices:
-            reservation = db.get_active_reservation_for_device(device['id'])
-            owned = reservation and reservation['user_id'] == user['id'] if reservation else False
-            desc = device['description'] or ''
+        device_data = fill_in_device_list(devices, only_mine)
 
-            # cut excessive long description to preview
-            lines = desc.splitlines()
-            preview = '\n'.join(lines[:3])[:250]
-            if len(desc) > 250 or desc.count('\n') >= 3:
-                preview += '\n...'
-
-            if only_mine and not owned:
-                continue # Only show my own reservations
-
-            device_data.append(
-                {
-                    'device': device,
-                    'reservation': reservation,
-                    'user_owned': owned,
-                    'preview': preview
-                }
-            )
         csrf_token = generate_csrf_token()
         return render_template(
             'index.html',
@@ -252,13 +258,7 @@ def reserve(device_id):
         only_mine = request.args.get('only_mine') == '1'
         devices = db.search_devices(query) if query else db.get_all_devices()
 
-        device_data = []
-        for d in devices:
-            reservation = db.get_active_reservation_for_device(d['id'])
-            owned = reservation and reservation['user_id'] == user['id'] if reservation else False
-            if only_mine and not owned:
-                continue
-            device_data.append({'device': d, 'reservation': reservation, 'user_owned': owned})
+        device_data = fill_in_device_list(devices, only_mine)
 
         csrf_token = generate_csrf_token()
         return render_template(
@@ -315,13 +315,7 @@ def view_device(device_id):
     only_mine = request.args.get('only_mine') == '1'
     devices = db.search_devices(query) if query else db.get_all_devices()
 
-    device_data = []
-    for d in devices:
-        reservation = db.get_active_reservation_for_device(d['id'])
-        user_owned = reservation and reservation['user_id'] == user['id'] if reservation else False
-        if only_mine and not user_owned:
-            continue
-        device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned})
+    device_data = fill_in_device_list(devices, only_mine)
 
     error_message = request.args.get('error')
     csrf_token = generate_csrf_token()
