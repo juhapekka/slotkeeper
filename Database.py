@@ -24,10 +24,11 @@ class Database:
 
     def get_user_by_username(self, username):
         conn = self._connect()
-        user = conn.execute('''SELECT *
-                               FROM users
-                               WHERE username = ?''',
-                            (username,)).fetchone()
+        user = conn.execute(
+            '''SELECT id, username, password_hash, created_at
+               FROM users
+               WHERE username = ?''',
+            (username,)).fetchone()
         conn.close()
         return user
 
@@ -48,7 +49,12 @@ class Database:
 
     def get_device_by_id(self, device_id):
         conn = self._connect()
-        device = conn.execute('SELECT * FROM devices WHERE id = ?', (device_id,)).fetchone()
+        device = conn.execute(
+            '''SELECT d.id, d.name, d.description, d.created_by, d.created_at,
+               u.username AS creator_username
+               FROM devices d
+               JOIN users u ON d.created_by = u.id
+               WHERE d.id = ?''', (device_id,)).fetchone()
         conn.close()
         return device
 
@@ -105,10 +111,12 @@ class Database:
     def get_reservations_by_user(self, user_id):
         conn = self._connect()
         reservations = conn.execute(
-            '''SELECT r.*, d.name AS device_name 
-               FROM reservations r 
-               JOIN devices d ON r.device_id = d.id 
-               WHERE r.user_id = ? 
+            '''SELECT r.id, r.user_id, r.device_id, r.reserved_until,
+                    r.created_at, r.ended_at, d.name AS device_name
+               FROM reservations r
+               JOIN devices d ON r.device_id = d.id
+               JOIN users u ON r.user_id = u.id
+               WHERE u.username = ? 
                ORDER BY r.reserved_until DESC''',
             (user_id,)
         ).fetchall()
@@ -118,7 +126,9 @@ class Database:
     def get_active_reservations_for_device(self, device_id, current_time):
         conn = self._connect()
         reservations = conn.execute(
-            'SELECT * FROM reservations WHERE device_id = ? AND reserved_until > ?  AND ended_at IS NULL',
+            '''SELECT id, user_id, device_id, reserved_until, created_at, ended_at
+               FROM reservations
+               WHERE device_id = ? AND reserved_until > ? AND ended_at IS NULL''',
             (device_id, current_time)
         ).fetchall()
         conn.close()
@@ -137,11 +147,13 @@ class Database:
     def get_active_reservation_for_device(self, device_id):
         conn = self._connect()
         reservation = conn.execute(
-            '''SELECT r.*, u.username 
-               FROM reservations r 
-               JOIN users u ON r.user_id = u.id 
-               WHERE r.device_id = ? 
-               AND r.reserved_until > strftime('%s','now') AND ended_at IS NULL
+            '''SELECT r.id, r.user_id, r.device_id, r.reserved_until,
+                        r.created_at, r.ended_at, u.username
+               FROM reservations r
+               JOIN users u ON r.user_id = u.id
+               WHERE r.device_id = ?
+               AND r.reserved_until > strftime('%s','now')
+               AND r.ended_at IS NULL
                ORDER BY r.reserved_until
                LIMIT 1''',
             (device_id,)
@@ -227,7 +239,10 @@ class Database:
 
     def get_comment_by_id(self, comment_id):
         conn = self._connect()
-        comment = conn.execute('SELECT * FROM comments WHERE id = ?', (comment_id,)).fetchone()
+        comment = conn.execute(
+            '''SELECT id, device_id, user_id, content, created_at
+               FROM comments
+               WHERE id = ?''', (comment_id,)).fetchone()
         conn.close()
         return comment
 
