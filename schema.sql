@@ -30,3 +30,14 @@ CREATE TABLE reservations (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (device_id) REFERENCES devices(id)
 );
+
+-- Create comments table
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL CHECK(length(content) <= 1024),
+    created_at INTEGER DEFAULT (strftime('%s','now')),
+    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
