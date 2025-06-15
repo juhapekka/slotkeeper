@@ -313,6 +313,8 @@ def view_device(device_id):
     if not modal_device:
         return 'Device not found', 404
 
+    comments = db.get_comments_for_device(device_id)
+
     query = request.args.get('q', '')
     only_mine = request.args.get('only_mine') == '1'
     devices = db.search_devices(query) if query else db.get_all_devices()
@@ -325,13 +327,21 @@ def view_device(device_id):
             continue
         device_data.append({'device': d, 'reservation': reservation, 'user_owned': user_owned})
 
+    error_message = request.args.get('error')
+    csrf_token_val = generate_csrf_token()
+
     return render_template(
         'index.html',
         username=session['username'],
         devices=device_data,
         query=query,
         only_mine=only_mine,
-        modal_device=modal_device
+        modal_device=modal_device,
+        comments=comments,
+        current_user_id=user['id'],
+        show_device_detail_modal=True,
+        modal_error=error_message,
+        csrf_token=csrf_token_val
     )
 
 @app.route('/user')
@@ -348,6 +358,65 @@ def user_page():
                            reservations=reservations,
                            devices=devices,
                            last_reservations=last_reservations)
+
+@app.route('/device/<int:device_id>/add_comment', methods=['POST'])
+def add_comment_to_device(device_id):
+    '''Add comment to device, on device page'''
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if not check_csrf_token(request.form):
+        return 'Invalid CSRF token', 400
+
+    user = db.get_user_by_username(session['username'])
+    if not user:
+        return 'User not found', 403
+
+    content = request.form.get('comment_content')
+    if not content or len(content.strip()) == 0:
+        return redirect(url_for('view_device',
+                                device_id=device_id,
+                                error='Comment cannot be empty.'))
+
+    if len(content) > 1024:
+        return redirect(url_for('view_device',
+                                device_id=device_id,
+                                error='Comment too long (max 1024 chars).'))
+
+    if db.add_comment(device_id, user['id'], content.strip()):
+        return redirect(url_for('view_device',
+                                device_id=device_id))
+    else:
+        return redirect(url_for('view_device',
+                                device_id=device_id,
+                                error='Failed to add comment.'))
+
+@app.route('/comment/<int:comment_id>/delete', methods=['POST'])
+def delete_comment_route(comment_id):
+    '''Remove comment from device, on device page'''
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if not check_csrf_token(request.form):
+        return 'Invalid CSRF token', 400
+
+    user = db.get_user_by_username(session['username'])
+    if not user:
+        return 'User not found', 403
+
+    comment_to_delete = db.get_comment_by_id(comment_id)
+    if not comment_to_delete:
+        return redirect(url_for('index'))
+
+    device_id_for_redirect = comment_to_delete['device_id']
+
+    if db.delete_comment(comment_id, user['id']):
+        return redirect(url_for('view_device',
+                                device_id=device_id_for_redirect))
+
+    return redirect(url_for('view_device',
+                            device_id=device_id_for_redirect,
+                            error='Could not delete comment or not authorized.'))
 
 if __name__ == '__main__':
     app.run(debug=True)

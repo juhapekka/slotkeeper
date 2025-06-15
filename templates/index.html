@@ -50,6 +50,7 @@
                       <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
                       <button title='Delete'>🗑️</button>
                     </form>
+                    <a href='{{ url_for('view_device', device_id=entry.device.id) }}' title='View Comments'>💬</a>
                   </div>
               
                   <!--  colored status bar  -->
@@ -113,7 +114,7 @@
     {% endif %}
 
 {% if modal_device and not show_reservation_modal %}
-<div class='modal-overlay'>
+    <div class='modal-overlay'>
         <div class='card login-card modal-card'>
             <h2>{{ modal_device.name }}</h2>
             <p style='white-space: pre-wrap; text-align: left;'>{{ modal_device.description }}</p>
@@ -122,6 +123,41 @@
             <p style='margin-top: 1em; font-size: 0.9em; color: #666;'>
                 Added by {{ modal_device.creator_username }}
             </p>
+            {% endif %}
+
+            <hr style='margin: 1.5em 0;'>
+
+            <h3>Comments</h3>
+            <div class='comments-section' style='max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 1em; border: 1px solid #eee; padding: 0.5em;'>
+                {% if comments %}
+                    {% for comment in comments %}
+                    <div class='comment' style='border-bottom: 1px solid #f0f0f0; padding-bottom: 0.5em; margin-bottom: 0.5em;'>
+                        <p style='margin-bottom: 0.2em;'>{{ comment.content }}</p>
+                        <small style='color: #777;'>
+                            By: {{ comment.author_username }} on {{ comment.created_at | int | datetimeformat }}
+                            {# Näytä poistonappi vain kommentin tekijälle #}
+                            {% if comment.user_id == current_user_id %}
+                            <form method='POST' action='{{ url_for('delete_comment_route', comment_id=comment.id) }}' style='display: inline; margin-left: 10px;'>
+                                <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
+                                <button type='submit' class='delete-comment-btn' style='background:none; border:none; color:red; cursor:pointer; padding:0; font-size:0.8em;'>Delete</button>
+                            </form>
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No comments yet.</p>
+                {% endif %}
+            </div>
+
+            <h4>Add a comment</h4>
+            <form method='POST' action='{{ url_for('add_comment_to_device', device_id=modal_device.id) }}'>
+                <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
+                <textarea name='comment_content' rows='3' placeholder='Write your comment here...' required style='width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 0.5em; border-radius: 4px; border: 1px solid #ccc;'></textarea>
+                <button type='submit' class='register-btn' style='width: auto; padding: 8px 15px;'>Post Comment</button>
+            </form>
+            {% if modal_error %}
+                <div class='error-message' style='margin-top: 1em;'>{{ modal_error }}</div>
             {% endif %}
 
             <p style='margin-top: 2em;'>

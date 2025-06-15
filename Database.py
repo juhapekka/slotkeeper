@@ -200,3 +200,60 @@ class Database:
         results = cursor.fetchall()
         conn.close()
         return results
+
+    def add_comment(self, device_id, user_id, content):
+        conn = self._connect()
+        try:
+            conn.execute(
+                'INSERT INTO comments (device_id, user_id, content) VALUES (?, ?, ?)',
+                (device_id, user_id, content)
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f'Error adding comment: {e}')
+            return False
+        finally:
+            conn.close()
+
+    def get_comments_for_device(self, device_id):
+        conn = self._connect()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                '''SELECT c.id, c.content, c.created_at, u.username AS author_username, c.user_id
+                   FROM comments c
+                   JOIN users u ON c.user_id = u.id
+                   WHERE c.device_id = ?
+                   ORDER BY c.created_at DESC''',
+                (device_id,))
+            return [dict(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
+    def get_comment_by_id(self, comment_id):
+        conn = self._connect()
+        comment = conn.execute('SELECT * FROM comments WHERE id = ?', (comment_id,)).fetchone()
+        conn.close()
+        return comment
+
+    def delete_comment(self, comment_id, user_id_who_is_deleting):
+        conn = self._connect()
+        try:
+            # check if user deleting is the author
+            comment = self.get_comment_by_id(comment_id)
+            if not comment:
+                print('Comment not found for deletion.')
+                return False
+            if comment['user_id'] != user_id_who_is_deleting:
+                print('User not authorized to delete this comment.')
+                return False
+
+            conn.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f'Error deleting comment: {e}')
+            return False
+        finally:
+            conn.close()
