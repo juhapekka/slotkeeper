@@ -226,9 +226,19 @@ def reserve(device_id):
         try:
             reserved_int = int(datetime.strptime(reserved_until, '%Y-%m-%dT%H:%M').timestamp())
             if reserved_int <= time.time():
-                return 'Reservation must be in the future.', 400
+                return render_template(
+                    'index.html',
+                    username=session['username'],
+                    modal_error="Reservation must be in the future.",
+                    csrf_token=session['csrf_token']
+                )
         except Exception:
-            return 'Invalid reservation time format', 400
+            return render_template(
+                'index.html',
+                username=session['username'],
+                modal_error="Invalid reservation time format.",
+                csrf_token=session['csrf_token']
+            )
 
         success = db.create_reservation(user['id'], device_id, reserved_until)
         if success:
