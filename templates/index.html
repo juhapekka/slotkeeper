@@ -117,7 +117,9 @@
     <div class='modal-overlay'>
         <div class='card login-card modal-card'>
             <h2>{{ modal_device.name }}</h2>
-            <p style='white-space: pre-wrap; text-align: left;'>{{ modal_device.description }}</p>
+            <div class="modal-device-description-container">
+              <p style='white-space: pre-wrap; text-align: left;'>{{ modal_device.description }}</p>
+            </div>
 
             {% if modal_device.creator_username %}
             <p style='margin-top: 1em; font-size: 0.9em; color: #666;'>

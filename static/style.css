@@ -290,6 +290,16 @@ body {
     width: 460px;
 }
 
+.modal-card .modal-device-description-container {
+    max-height: 6em;
+    overflow-y: auto;
+}
+
+.modal-card .modal-device-description-container p {
+    margin: 0;
+    padding: 0.5em;
+}
+
 .device-description.truncated {
     max-height: 4.5em; /* about 3 rows */
     overflow: hidden;
