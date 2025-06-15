@@ -260,9 +260,14 @@ def reserve(device_id):
             show_reservation_modal=True,
             modal_device=device,
             modal_error=None,
-            csrf_token = csrf_token
+            csrf_token=csrf_token
         )
-    return 'Device not found.'
+    return render_template(
+            'index.html',
+            username=session['username'],
+            modal_error="Device not Found!",
+            csrf_token=session['csrf_token']
+        )
 
 @app.route('/cancel_reservation/<int:reservation_id>', methods=['POST'])
 @login_required_with_csrf
@@ -287,7 +292,12 @@ def view_device(device_id):
 
     modal_device = db.get_device_by_id(device_id)
     if not modal_device:
-        return 'Device not found', 404
+        return render_template(
+            'index.html',
+            username=session['username'],
+            modal_error="Device not Found!",
+            csrf_token=session['csrf_token']
+        )
 
     comments = db.get_comments_for_device(device_id)
 
