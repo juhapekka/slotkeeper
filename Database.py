@@ -40,7 +40,7 @@ class Database:
             )
             conn.commit()
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print('Error adding device:', e)
             return False
         finally:
@@ -96,7 +96,7 @@ class Database:
             )
             conn.commit()
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print('Error creating reservation:', e)
             return False
         finally:
@@ -204,7 +204,7 @@ class Database:
             )
             conn.commit()
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f'Error adding comment: {e}')
             return False
         finally:
@@ -246,7 +246,7 @@ class Database:
             conn.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
             conn.commit()
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f'Error deleting comment: {e}')
             return False
         finally:

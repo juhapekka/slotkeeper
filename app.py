@@ -238,7 +238,7 @@ def reserve(device_id):
                     modal_error="Reservation must be in the future.",
                     csrf_token=session['csrf_token']
                 )
-        except Exception:
+        except ValueError:
             return render_template(
                 'index.html',
                 username=session['username'],
