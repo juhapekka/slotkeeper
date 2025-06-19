@@ -228,14 +228,14 @@ def reserve(device_id):
                 return render_template(
                     'index.html',
                     username=session['username'],
-                    modal_error="Reservation must be in the future.",
+                    modal_error='Reservation must be in the future.',
                     csrf_token=session['csrf_token']
                 )
         except ValueError:
             return render_template(
                 'index.html',
                 username=session['username'],
-                modal_error="Invalid reservation time format.",
+                modal_error='Invalid reservation time format.',
                 csrf_token=session['csrf_token']
             )
 
@@ -267,7 +267,7 @@ def reserve(device_id):
     return render_template(
             'index.html',
             username=session['username'],
-            modal_error="Device not Found!",
+            modal_error='Device not Found!',
             csrf_token=session['csrf_token']
         )
 
@@ -298,7 +298,7 @@ def view_device(device_id):
         return render_template(
             'index.html',
             username=session['username'],
-            modal_error="Device not Found!",
+            modal_error='Device not Found!',
             csrf_token=session['csrf_token']
         )
 
