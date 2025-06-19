@@ -40,8 +40,7 @@
                         - added by {{ entry.device.creator_username }}
                       </span>
                   </div>
-                  <div class='device-description truncated' onclick='window.location.href="/device/{{ entry.device.id }}"'>{{ entry.preview }}
-                  </div>
+                  <a href='{{ url_for('view_device', device_id=entry.device.id) }}' class='device-description truncated'>{{ entry.preview }}</a>
                   
                   <!--  small edit / delete icons in top-right  -->
                   <div class='card-header-icons'>

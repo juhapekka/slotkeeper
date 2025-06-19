@@ -307,6 +307,9 @@ body {
     white-space: pre-wrap;
     cursor: pointer;
     position: relative;
+    display: block;
+    text-decoration: none;
+    color: inherit;
 }
 
 .device-description.truncated:hover {
