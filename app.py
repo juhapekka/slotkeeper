@@ -93,6 +93,7 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     '''Handle registration'''
+    error = None
     if request.method == 'POST':
         if not check_csrf_token(request.form):
             return render_template('login.html',
@@ -104,28 +105,23 @@ def register():
         password_hash = generate_password_hash(password)
 
         if not username or not password:
-            return render_template('register.html',
-                                   error='Username and password are required.',
-                                   csrf_token=session['csrf_token'])
+            error = 'Username and password are required.'
+        elif len(username) > 32:
+            error = 'Username too long (max 32 characters).'
+        elif len(password) < 6:
+            error = 'Password too short (min 6 characters).'
 
-        if len(username) > 32:
-            return render_template('register.html',
-                                   error='Username too long (max 32 characters).',
-                                   csrf_token=session['csrf_token'])
+        if not error:
+            if db.create_user(username, password_hash):
+                return redirect(url_for('login'))
+            else:
+                error='Username already exists.'
+    else:
+        generate_csrf_token()
 
-        if len(password) < 6:
-            return render_template('register.html',
-                                   error='Password too short (min 6 characters).',
-                                   csrf_token=session['csrf_token'])
-
-        if db.create_user(username, password_hash):
-            return redirect(url_for('login'))
-
-        return render_template('register.html',
-                                error='Username already exists.',
-                                csrf_token=session['csrf_token'])
-    csrf_token = generate_csrf_token()
-    return render_template('register.html', csrf_token=csrf_token)
+    return render_template('register.html',
+                            error=error,
+                            csrf_token=session['csrf_token'])
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
