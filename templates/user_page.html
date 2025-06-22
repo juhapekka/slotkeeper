@@ -57,6 +57,57 @@
                 {% endfor %}
                 </ul>
             </div>
+
+            <div class='user-block'>
+                <div class='user-charts-container' style='display: flex; flex-wrap: wrap; gap: 30px;'>
+                {# left pie, reservation amounts #}
+                <div class='chart-block' style='flex: 1; min-width: 300px;'>
+                    <h3>Device Reservations (by Count)</h3>
+                    {% if has_reservations_for_pie_counts %}
+                        <div class='pie-container'>
+                            <div class='chart' style='{{ conic_gradient_style_counts | safe }}'></div>
+                            <ul class='key'>
+                                {% for item in pie_chart_data_counts %}
+                                <li>
+                                    <span class='percent' style='background-color: {{ item.color }};'>
+                                        {{ item.percentage }}%
+                                    </span>
+                                    <span class='choice'>
+                                        {{ item.name }} ({{ item.value_numeric }} times)
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p>No reservations made yet to display reservation counts.</p>
+                    {% endif %}
+                </div>
+                {# right pie, durations #}
+                <div class='chart-block' style='flex: 1; min-width: 300px;'>
+                    <h3>Device Reservations (by Duration)</h3>
+                    {% if has_reservations_for_pie_durations %}
+                        <div class='pie-container'>
+                            <div class='chart' style='{{ conic_gradient_style_durations | safe }}'></div>
+                            <ul class='key'>
+                                {% for item in pie_chart_data_durations %}
+                                <li>
+                                    <span class='percent' style='background-color: {{ item.color }};'>
+                                        {{ item.percentage }}%
+                                    </span>
+                                    <span class='choice'>
+                                        {{ item.name }} ({{ item.formatted_duration }})
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p>No reservation durations to display.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         </div>
     </div>
 </body>
