@@ -313,3 +313,71 @@ class Database:
             return False
         finally:
             conn.close()
+
+    def get_user_device_reservation_durations(self, user_id):
+        conn = self._connect()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                '''SELECT
+                        d.id as device_id,
+                        d.name as device_name,
+                   SUM(
+                        CASE
+                            WHEN r.ended_at IS NOT NULL AND r.ended_at > r.created_at
+                                THEN r.ended_at - r.created_at
+                            WHEN r.ended_at IS NULL AND r.reserved_until > r.created_at
+                                THEN r.reserved_until - r.created_at
+                            ELSE 0
+                        END
+                   ) as total_duration_seconds
+                   FROM
+                        devices d
+                   JOIN
+                        reservations r ON d.id = r.device_id
+                   WHERE
+                        r.user_id = ?
+                   GROUP BY
+                        d.id, d.name
+                   HAVING
+                        SUM(CASE
+                            WHEN r.ended_at IS NOT NULL AND r.ended_at > r.created_at
+                            THEN r.ended_at - r.created_at
+                            WHEN r.ended_at IS NULL AND r.reserved_until > r.created_at
+                            THEN r.reserved_until - r.created_at ELSE 0 END) > 0
+                   ORDER BY
+                        total_duration_seconds DESC''', (user_id,))
+            return [dict(row) for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            print(f"Error in get_user_device_reservation_durations: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_user_device_reservation_counts(self, user_id):
+        conn = self._connect()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                '''SELECT
+                    d.id as device_id,
+                    d.name as device_name,
+                   COUNT(r.id) as reservation_count
+                   FROM
+                        devices d
+                   JOIN
+                        reservations r ON d.id = r.device_id
+                   WHERE
+                        r.user_id = ?
+                   GROUP BY
+                        d.id, d.name
+                   HAVING
+                        COUNT(r.id) > 0 -- #drop devices with no reservations
+                ORDER BY
+                    reservation_count DESC''', (user_id,))
+            return [dict(row) for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            print(f"Error in get_user_device_reservation_counts: {e}")
+            return []
+        finally:
+            conn.close()
