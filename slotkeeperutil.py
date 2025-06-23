@@ -64,9 +64,9 @@ def fill_in_device_list(session, db, devices):
         )
     return device_data
 
-def generate_pie_chart_segments(device_list, colors, value_key='value', label_key='name',
-                                preform_key=None):
+def generate_pie_chart_segments(device_list, value_key='value', label_key='name', preform_key=None):
     '''generate data to be shown in pie chart. top 3 machines + rest.'''
+    colors = ['#F15854', '#5DA5DA', '#DECF3F', '#4D4D4D']
     pie_data = []
     gradient_parts = []
     total_value = sum(item.get(value_key, 0) for item in device_list)

@@ -10,6 +10,9 @@ import slotkeeperutil as su
 app = Flask(__name__)
 ITEMS_PER_PAGE = 20
 DATABASE = 'database.db'
+app.secret_key = config.secret_key  # Used to sign session cookies
+'''Instantiate the Database class'''
+db = Database(DATABASE)
 
 def login_required_with_csrf(f):
     '''wrapper to check login and for POST csrf status'''
@@ -25,11 +28,6 @@ def login_required_with_csrf(f):
                                    csrf_token=session['csrf_token'])
         return f(*args, **kwargs)
     return decorated_function
-
-app.secret_key = config.secret_key  # Used to sign session cookies
-
-'''Instantiate the Database class'''
-db = Database(DATABASE)
 
 @app.route('/')
 def index():
@@ -186,10 +184,7 @@ def delete_device(device_id):
 @app.route('/reserve/<int:device_id>', methods=['GET', 'POST'])
 def reserve(device_id):
     '''Handle reserve device from UI'''
-    user = db.get_user_by_username(session['username'])
-    if not user:
-        return 'Error: User not found.'
-    user_id = user['id'] if user else None
+    user_id = db.get_user_by_username(session['username'])['id']
 
     if request.method == 'POST':
         reserved_until = request.form['reserved_until']
@@ -215,15 +210,11 @@ def reserve(device_id):
                 csrf_token=session['csrf_token']
             )
 
-        success = db.create_reservation(user['id'], device_id, reserved_until)
-        if success:
-            return redirect(url_for('index',
-                                    page=original_page,
-                                    q=original_query,
-                                    only_mine=('1' if original_only_mine_bool else None)))
-
-
-        return redirect(url_for('reserve', device_id=device_id))
+        db.create_reservation(user_id, device_id, reserved_until)
+        return redirect(url_for('index',
+                                page=original_page,
+                                q=original_query,
+                                only_mine=('1' if original_only_mine_bool else None)))
 
     device = db.get_device_by_id(device_id)
     if device:
@@ -337,7 +328,6 @@ def user_page():
     username = session['username']
     reservations = db.get_active_reservations_by_user(username)
     devices = db.get_devices_created_by_user(username)
-    last_reservations = db.get_last_reservations_by_user(username)
     user = db.get_user_by_username(username)
 
     if not user:
@@ -348,11 +338,9 @@ def user_page():
     user_id = user['id']
 
     device_res_counts = db.get_user_device_reservation_counts(user_id)
-    pie_colors_counts = ['#F15854', '#5DA5DA', '#DECF3F', '#4D4D4D']
 
     pie_data_counts, gradient_counts, has_pie_counts = su.generate_pie_chart_segments(
         device_res_counts,
-        pie_colors_counts,
         label_key='device_name',
         value_key='reservation_count')
 
@@ -368,7 +356,6 @@ def user_page():
 
     pie_data_durations, gradient_durations, has_pie_durations = su.generate_pie_chart_segments(
         processed_device_res_durations,
-        pie_colors_counts,
         value_key='total_duration_seconds',
         label_key='device_name',
         preform_key='formatted_duration')
@@ -377,7 +364,7 @@ def user_page():
                            username=username,
                            reservations=reservations,
                            devices=devices,
-                           last_reservations=last_reservations,
+                           last_reservations=db.get_last_reservations_by_user(username),
                            pie_chart_data_counts=pie_data_counts,
                            conic_gradient_style_counts=gradient_counts,
                            has_reservations_for_pie_counts=has_pie_counts,
