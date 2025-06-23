@@ -72,7 +72,7 @@ class Database:
         conn.commit()
         conn.close()
 
-    def search_devices(self, query=None, user_id=None, owned=False):
+    def search_devices(self, query=None, user_id=None, owned=False, page=1, limit=20):
         conn = self._connect()
         search = f'%{query}%' if query else '%'
         params = [search, search]
@@ -80,19 +80,22 @@ class Database:
         clauses = ['(d.name LIKE ? OR d.description LIKE ?)']
 
         if owned and user_id:
-            clauses.append('''
-                EXISTS (
-                    SELECT 1 FROM reservations r_check
-                    WHERE r_check.device_id = d.id
-                    AND r_check.user_id = ?
-                    AND r_check.reserved_until > strftime('%s', 'now')
-                    AND r_check.ended_at IS NULL
-                )
-            ''')
+            clauses.append(
+                '''EXISTS (
+                   SELECT 1 FROM reservations r_check
+                   WHERE r_check.device_id = d.id
+                   AND r_check.user_id = ?
+                   AND r_check.reserved_until > strftime('%s', 'now')
+                   AND r_check.ended_at IS NULL
+                   )''')
             params.append(user_id)
 
         where_sql = ' AND '.join(clauses)
 
+        # COUNT query
+        count_sql = f'SELECT COUNT(*) FROM devices d WHERE {where_sql};'
+
+        # main query
         sql = f'''
         WITH RankedReservations AS (
             SELECT
@@ -122,22 +125,34 @@ class Database:
             SELECT * FROM RankedReservations WHERE rn = 1
         ) AS rr_any_user ON d.id = rr_any_user.device_id
         WHERE {where_sql}
-        ORDER BY d.id ASC;
+        ORDER BY d.id ASC
+        LIMIT ? OFFSET ?;
         '''
 
         try:
-            params.append(user_id if user_id else 0)
+            count_cursor = conn.execute(count_sql, params)
+            total = count_cursor.fetchone()[0]
 
-            cursor = conn.execute(sql, params)
-            return [dict(row) for row in cursor.fetchall()]
+            query_params = params + [user_id if user_id else 0, limit, (page - 1) * limit]
+            cursor = conn.execute(sql, query_params)
+            items = [dict(row) for row in cursor.fetchall()]
+
+            return {
+                'total': total,
+                'items': items
+            }
+
         except sqlite3.Error as e:
             print('search_devices failed:', e)
-            return []
+            return {
+                'total': 0,
+                'items': []
+            }
         finally:
             conn.close()
 
-    def get_all_devices(self, user_id=None, owned=False):
-        return self.search_devices(query=None, user_id=user_id, owned=owned)
+    def get_all_devices(self, user_id=None, owned=False, page=1, limit=20):
+        return self.search_devices(query=None, user_id=user_id, owned=owned, page=page, limit=limit)
 
     def create_reservation(self, user_id, device_id, reserved_until):
         conn = self._connect()
@@ -349,7 +364,7 @@ class Database:
                         total_duration_seconds DESC''', (user_id,))
             return [dict(row) for row in cursor.fetchall()]
         except sqlite3.Error as e:
-            print(f"Error in get_user_device_reservation_durations: {e}")
+            print(f'Error in get_user_device_reservation_durations: {e}')
             return []
         finally:
             conn.close()
@@ -377,7 +392,7 @@ class Database:
                     reservation_count DESC''', (user_id,))
             return [dict(row) for row in cursor.fetchall()]
         except sqlite3.Error as e:
-            print(f"Error in get_user_device_reservation_counts: {e}")
+            print(f'Error in get_user_device_reservation_counts: {e}')
             return []
         finally:
             conn.close()
