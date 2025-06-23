@@ -1,52 +1,14 @@
 from datetime import datetime
 from functools import wraps
-import math
 import time
-import uuid
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from Database import Database
 import config
+from Database import Database
+import slotkeeperutil as su
 
 app = Flask(__name__)
 ITEMS_PER_PAGE = 20
-
-def format_duration_to_string(seconds):
-    '''convert seconds to ui string'''
-    if not isinstance(seconds, (int, float)) or seconds < 0:
-        return 'N/A'
-
-    if seconds == 0:
-        return '0s'
-
-    hours = math.floor(seconds / 3600)
-    remaining_seconds_after_hours = seconds % 3600
-    minutes = math.floor(remaining_seconds_after_hours / 60)
-    remaining_seconds_final = math.floor(remaining_seconds_after_hours % 60)
-
-    parts = []
-    if hours > 0:
-        parts.append(f'{int(hours)}h')
-    if minutes > 0:
-        parts.append(f'{int(minutes)}min')
-
-    if not parts and remaining_seconds_final > 0:
-        parts.append(f'{int(remaining_seconds_final)}s')
-    elif not parts and seconds > 0:
-        return '<1s'
-
-    return ' '.join(parts) if parts else '0s'
-
-def generate_csrf_token():
-    '''UUID for csrf token'''
-    token = str(uuid.uuid4())
-    session['csrf_token'] = token
-    return token
-
-def check_csrf_token(form):
-    '''Check csrf token'''
-    token = form.get('csrf_token')
-    return token and token == session.get('csrf_token')
 
 def login_required_with_csrf(f):
     '''wrapper to check login and for POST csrf status'''
@@ -56,7 +18,7 @@ def login_required_with_csrf(f):
             return render_template('login.html',
                                    error='Session error.',
                                    csrf_token=session['csrf_token'])
-        if request.method == 'POST' and not check_csrf_token(request.form):
+        if request.method == 'POST' and not su.check_csrf_token(session, request.form):
             return render_template('login.html',
                                    error='Session error.',
                                    csrf_token=session['csrf_token'])
@@ -115,7 +77,7 @@ def index():
         devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
         device_data = fill_in_device_list(devices['items'])
 
-        csrf_token = generate_csrf_token()
+        csrf_token = su.generate_csrf_token(session)
         return render_template(
             'index.html',
             username=session['username'],
@@ -124,7 +86,7 @@ def index():
             only_mine=only_mine,
             csrf_token=csrf_token,
             current_page=page,
-            total_pages=int(devices['total']/ITEMS_PER_PAGE))
+            total_pages=int(devices['total'] / ITEMS_PER_PAGE))
     return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -132,7 +94,7 @@ def register():
     '''Handle registration'''
     error = None
     if request.method == 'POST':
-        if not check_csrf_token(request.form):
+        if not su.check_csrf_token(session, request.form):
             return render_template('login.html',
                                    error='Invalid CSRF token.',
                                    csrf_token=session['csrf_token'])
@@ -154,7 +116,7 @@ def register():
             else:
                 error='Username already exists.'
     else:
-        generate_csrf_token()
+        su.generate_csrf_token(session)
 
     return render_template('register.html',
                             error=error,
@@ -164,7 +126,7 @@ def register():
 def login():
     '''Handle login'''
     if request.method == 'POST':
-        if not check_csrf_token(request.form):
+        if not su.check_csrf_token(session, request.form):
             return render_template('login.html',
                                    error='Invalid CSRF token.',
                                    csrf_token=session['csrf_token'])
@@ -182,7 +144,7 @@ def login():
                                 error='Invalid username or password.',
                                 csrf_token=session['csrf_token'])
 
-    csrf_token = generate_csrf_token()
+    csrf_token = su.generate_csrf_token(session)
     return render_template('login.html', csrf_token=csrf_token)
 
 @app.route('/logout')
@@ -221,7 +183,7 @@ def add_device():
 
         return redirect(url_for('login'))
 
-    csrf_token = generate_csrf_token()
+    csrf_token = su.generate_csrf_token(session)
     return render_template('add_device.html', csrf_token=csrf_token)
 
 @app.route('/edit_device/<int:device_id>', methods=['GET', 'POST'])
@@ -236,7 +198,7 @@ def edit_device(device_id):
 
     device = db.get_device_by_id(device_id)
     if device:
-        csrf_token = generate_csrf_token()
+        csrf_token = su.generate_csrf_token(session)
         return render_template('edit_device.html', device=device, csrf_token=csrf_token)
 
     return redirect(url_for('index'))
@@ -304,7 +266,7 @@ def reserve(device_id):
         devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
         device_data = fill_in_device_list(devices['items'])
 
-        csrf_token = generate_csrf_token()
+        csrf_token = su.generate_csrf_token(session)
         return render_template(
             'index.html',
             username=session['username'],
@@ -316,7 +278,7 @@ def reserve(device_id):
             modal_error=None,
             csrf_token=csrf_token,
             current_page=page,
-            total_pages=int(devices['total']/ITEMS_PER_PAGE))
+            total_pages=int(devices['total'] / ITEMS_PER_PAGE))
     return render_template(
             'index.html',
             username=session['username'],
@@ -371,7 +333,7 @@ def view_device(device_id):
     device_data = fill_in_device_list(devices['items'])
 
     error_message = request.args.get('error')
-    csrf_token = generate_csrf_token()
+    csrf_token = su.generate_csrf_token(session)
 
     return render_template(
         'index.html',
@@ -386,7 +348,7 @@ def view_device(device_id):
         modal_error=error_message,
         csrf_token=csrf_token,
         current_page=page,
-        total_pages=int(devices['total']/ITEMS_PER_PAGE))
+        total_pages=int(devices['total'] / ITEMS_PER_PAGE))
 
 def generate_pie_chart_segments(device_list, colors, value_key='value', label_key='name',
                                 preform_key=None):
@@ -410,7 +372,7 @@ def generate_pie_chart_segments(device_list, colors, value_key='value', label_ke
             if others_value > 0:
                 other_item_data = {label_key: 'Other Devices', value_key: others_value}
                 if preform_key == 'formatted_duration':
-                    other_item_data[preform_key] = format_duration_to_string(others_value)
+                    other_item_data[preform_key] = su.format_duration_to_string(others_value)
                 pie_items.append(other_item_data)
 
         for i, input_list in enumerate(pie_items):
@@ -485,7 +447,7 @@ def user_page():
         processed_device_res_durations.append({
             'device_name': item.get('device_name', 'Unknown Device'),
             'total_duration_seconds': item.get('total_duration_seconds', 0),
-            'formatted_duration': format_duration_to_string(item.get('total_duration_seconds', 0))
+            'formatted_duration': su.format_duration_to_string(item.get('total_duration_seconds', 0))
         })
 
     pie_data_durations, gradient_durations, has_pie_durations = generate_pie_chart_segments(
