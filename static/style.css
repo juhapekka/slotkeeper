@@ -408,3 +408,40 @@ body {
 .key .choice {
   font-size: 0.9em;
 }
+
+.top-bar-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  margin: 0 15px;
+}
+
+.top-bar-pagination .page-nav-btn {
+  color: #fff;
+  text-decoration: none;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s, border-color 0.2s;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.top-bar-pagination .page-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.top-bar-pagination .page-nav-btn.disabled {
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.top-bar-pagination .page-info {
+  font-size: 0.9em;
+  padding: 0 5px;
+}

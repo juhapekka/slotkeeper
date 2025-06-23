@@ -9,6 +9,7 @@ from Database import Database
 import config
 
 app = Flask(__name__)
+ITEMS_PER_PAGE = 20
 
 def format_duration_to_string(seconds):
     '''convert seconds to ui string'''
@@ -104,8 +105,15 @@ def index():
 
         query = request.args.get('q', '')
         only_mine = request.args.get('only_mine') == '1'
-        devices = db.search_devices(query, user_id, only_mine)
-        device_data = fill_in_device_list(devices)
+
+        try:
+            page = int(request.args.get('page', 1))
+        except ValueError:
+            page = 1
+        page = max(page, 1)
+
+        devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+        device_data = fill_in_device_list(devices['items'])
 
         csrf_token = generate_csrf_token()
         return render_template(
@@ -114,7 +122,9 @@ def index():
             devices=device_data,
             query=query,
             only_mine=only_mine,
-            csrf_token=csrf_token)
+            csrf_token=csrf_token,
+            current_page=page,
+            total_pages=int(devices['total']/ITEMS_PER_PAGE))
     return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -248,6 +258,10 @@ def reserve(device_id):
 
     if request.method == 'POST':
         reserved_until = request.form['reserved_until']
+        original_page = request.form.get('original_page', 1, type=int)
+        original_query = request.form.get('original_query', '')
+        original_only_mine_str = request.form.get('original_only_mine', '')
+        original_only_mine_bool = original_only_mine_str == '1'
 
         try:
             reserved_int = int(datetime.strptime(reserved_until, '%Y-%m-%dT%H:%M').timestamp())
@@ -268,7 +282,11 @@ def reserve(device_id):
 
         success = db.create_reservation(user['id'], device_id, reserved_until)
         if success:
-            return redirect(url_for('index'))
+            return redirect(url_for('index',
+                                    page=original_page,
+                                    q=original_query,
+                                    only_mine=('1' if original_only_mine_bool else None)))
+
 
         return redirect(url_for('reserve', device_id=device_id))
 
@@ -276,8 +294,15 @@ def reserve(device_id):
     if device:
         query = request.args.get('q', '')
         only_mine = request.args.get('only_mine') == '1'
-        devices = db.search_devices(query, user_id, only_mine)
-        device_data = fill_in_device_list(devices)
+
+        try:
+            page = int(request.args.get('page', 1))
+        except ValueError:
+            page = 1
+        page = max(page, 1)
+
+        devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+        device_data = fill_in_device_list(devices['items'])
 
         csrf_token = generate_csrf_token()
         return render_template(
@@ -289,8 +314,9 @@ def reserve(device_id):
             show_reservation_modal=True,
             modal_device=device,
             modal_error=None,
-            csrf_token=csrf_token
-        )
+            csrf_token=csrf_token,
+            current_page=page,
+            total_pages=int(devices['total']/ITEMS_PER_PAGE))
     return render_template(
             'index.html',
             username=session['username'],
@@ -333,9 +359,16 @@ def view_device(device_id):
 
     query = request.args.get('q', '')
     only_mine = request.args.get('only_mine') == '1'
-    devices = db.search_devices(query, user_id, only_mine)
 
-    device_data = fill_in_device_list(devices)
+    try:
+        page = int(request.args.get('page', 1))
+    except ValueError:
+        page = 1
+    page = max(page, 1)
+
+    devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+
+    device_data = fill_in_device_list(devices['items'])
 
     error_message = request.args.get('error')
     csrf_token = generate_csrf_token()
@@ -351,8 +384,9 @@ def view_device(device_id):
         current_user_id=user['id'],
         show_device_detail_modal=True,
         modal_error=error_message,
-        csrf_token=csrf_token
-    )
+        csrf_token=csrf_token,
+        current_page=page,
+        total_pages=int(devices['total']/ITEMS_PER_PAGE))
 
 def generate_pie_chart_segments(device_list, colors, value_key='value', label_key='name',
                                 preform_key=None):
@@ -492,13 +526,24 @@ def add_comment_to_device(device_id):
                                 device_id=device_id,
                                 error='Comment too long (max 1024 chars).'))
 
+    original_page = request.form.get('original_page', 1, type=int)
+    original_query = request.form.get('original_query', '')
+    original_only_mine_str = request.form.get('original_only_mine', '')
+    original_only_mine_bool = original_only_mine_str == '1'
+
     if db.add_comment(device_id, user['id'], content.strip()):
         return redirect(url_for('view_device',
-                                device_id=device_id))
+                                device_id=device_id,
+                                page=original_page,
+                                q=original_query,
+                                only_mine=('1' if original_only_mine_bool else None)))
     else:
         return redirect(url_for('view_device',
                                 device_id=device_id,
-                                error='Failed to add comment.'))
+                                error='Failed to add comment.',
+                                page=original_page,
+                                q=original_query,
+                                only_mine=('1' if original_only_mine_bool else None)))
 
 @app.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required_with_csrf
