@@ -71,6 +71,9 @@
                       {% if entry.user_owned %}
                         <form method='post' action='/cancel_reservation/{{ entry.reservation.id }}'>
                           <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
+                          <input type='hidden' name='original_page' value='{{ current_page }}'>
+                          <input type='hidden' name='original_query' value='{{ query or '' }}'>
+                          <input type='hidden' name='original_only_mine' value='{{ '1' if only_mine else '' }}'>              
                           <button>Release</button>
                         </form>
                       {% endif %}

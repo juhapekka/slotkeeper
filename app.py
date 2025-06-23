@@ -292,7 +292,15 @@ def cancel_reservation(reservation_id):
     '''Handle releasing reservation from UI'''
     user = db.get_user_by_username(session['username'])
     db.cancel_reservation(reservation_id, user['id'])
-    return redirect(url_for('index'))
+    original_page = request.form.get('original_page', 1, type=int)
+    original_query = request.form.get('original_query', '')
+    original_only_mine_str = request.form.get('original_only_mine', '')
+    original_only_mine_bool = original_only_mine_str == '1'
+
+    return redirect(url_for('index',
+                            page=original_page,
+                            q=original_query,
+                            only_mine=('1' if original_only_mine_bool else None)))
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
