@@ -43,6 +43,9 @@ def fill_in_device_list(session, db, devices):
     device_data = []
     user = db.get_user_by_username(session['username'])
 
+    if not user:
+        return device_data
+
     for device in devices:
         reservation = db.get_active_reservation_for_device(device['id'])
         owned = reservation and reservation['user_id'] == user['id'] if reservation else False
