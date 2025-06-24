@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import wraps
+import math
 import time
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +9,7 @@ from Database import Database
 import slotkeeperutil as su
 
 app = Flask(__name__)
-ITEMS_PER_PAGE = 20
+ITEMS_PER_PAGE = 10
 DATABASE = 'database.db'
 app.secret_key = config.secret_key  # Used to sign session cookies
 '''Instantiate the Database class'''
@@ -57,7 +58,8 @@ def index():
             only_mine=only_mine,
             csrf_token=csrf_token,
             current_page=page,
-            total_pages=int(devices['total'] / ITEMS_PER_PAGE))
+            total_pages=math.ceil(devices['total'] / ITEMS_PER_PAGE))
+
     return render_template('index.html', username=None)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -242,7 +244,7 @@ def reserve(device_id):
             modal_error=None,
             csrf_token=csrf_token,
             current_page=page,
-            total_pages=int(devices['total'] / ITEMS_PER_PAGE))
+            total_pages=math.ceil(devices['total'] / ITEMS_PER_PAGE))
     return render_template(
             'index.html',
             username=session['username'],
@@ -319,7 +321,7 @@ def view_device(device_id):
         modal_error=error_message,
         csrf_token=csrf_token,
         current_page=page,
-        total_pages=int(devices['total'] / ITEMS_PER_PAGE))
+        total_pages=math.ceil(devices['total'] / ITEMS_PER_PAGE))
 
 @app.route('/user')
 @login_required_with_csrf
