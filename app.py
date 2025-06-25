@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+'''flask app main module'''
+
 from datetime import datetime
 from functools import wraps
 import math

@@ -1,3 +1,4 @@
+'''util module for slotkeeper'''
 import math
 import uuid
 

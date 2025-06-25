@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+'''stress test for slotkeeper'''
 import sqlite3
 import hashlib
 import time
@@ -19,7 +21,8 @@ def insert_users(conn, n):
 def insert_devices(conn, n):
     print('Inserting devices...')
     devices = [(f'device{i}', f'description of device {i}', i % N_USERS + 1) for i in range(n)]
-    conn.executemany('INSERT INTO devices (name, description, created_by) VALUES (?, ?, ?)', devices)
+    conn.executemany('INSERT INTO devices (name, description, created_by) VALUES (?, ?, ?)',
+                     devices)
     conn.commit()
 
 def insert_comments(conn, n_devices, comments_per_device):
