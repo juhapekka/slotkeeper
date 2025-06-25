@@ -150,10 +150,9 @@
                 {% if comments %}
                     {% for comment in comments %}
                     <div class='comment' style='border-bottom: 1px solid #f0f0f0; padding-bottom: 0.5em; margin-bottom: 0.5em;'>
-                        <p style='margin-bottom: 0.2em;'>{{ comment.content }}</p>
+                        <p style='margin-bottom: 0.2em; white-space: pre-wrap;'>{{ comment.content }}</p>
                         <small style='color: #777;'>
                             By: {{ comment.author_username }} on {{ comment.created_at | int | datetimeformat }}
-                            {# Näytä poistonappi vain kommentin tekijälle #}
                             {% if comment.user_id == current_user_id %}
                             <form method='POST' action='{{ url_for('delete_comment_route', comment_id=comment.id) }}' style='display: inline; margin-left: 10px;'>
                                 <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
