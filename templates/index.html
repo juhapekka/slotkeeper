@@ -11,15 +11,17 @@
         <div class='brand'><a href='/'>Slotkeeper</a></div>
 
         <form class='search-form' method='get' action='/'>
-            <input type='text' name='q' placeholder='Search…' value='{{ query or '' }}'>
+          <label for='search_query' class='visually-hidden'>Search Devices:</label> 
+          <input type='text' id='search_query' name='q' placeholder='Search...' value='{{ query or '' }}'>
 
-            <label style='color:#fff; font-size:0.9rem; margin-left:8px;'>
-              <input type='checkbox' name='only_mine' value='1' {% if only_mine %}checked{% endif %}>
-              My reservations
-            </label>
+          <label style='color:#fff; font-size:0.9rem; margin-left:8px;' for='only_mine_checkbox'>
+            <input type='checkbox' id='only_mine_checkbox' name='only_mine' value='1' {% if only_mine %}checked{% endif %}>
+            My reservations
+          </label>
 
-            <button type='submit'>Search</button>
+          <button type='submit'>Search</button>
         </form>
+
         {% if devices and total_pages > 1 %}
         <div class='top-bar-pagination'>
             <a href='{{ url_for('index', q=query, only_mine=('1' if only_mine else None), page=current_page-1 if current_page > 1 else 1) }}'
@@ -114,9 +116,9 @@
             <input type='hidden' name='original_page' value='{{ current_page }}'>
             <input type='hidden' name='original_query' value='{{ query or '' }}'>
             <input type='hidden' name='original_only_mine' value='{{ '1' if only_mine else '' }}'>
-            <label style='font-weight:600;'>Until:</label>
+            <label for='reserved_until_datetime'  style='font-weight:600;'>Until:</label>
             <div style='margin:0.8rem 0 1.2rem 0;'>
-                <input type='datetime-local' name='reserved_until' required
+                <input type='datetime-local' id='reserved_until_datetime' name='reserved_until' required
                     style='width:100%; padding:8px; box-sizing:border-box;'>
             </div>
             <button type='submit' class='register-btn' style='width:100%;'>Confirm reservation</button>
@@ -173,7 +175,8 @@
                 <input type='hidden' name='original_page' value='{{ current_page }}'>
                 <input type='hidden' name='original_query' value='{{ query or '' }}'>
                 <input type='hidden' name='original_only_mine' value='{{ '1' if only_mine else '' }}'>
-                <textarea name='comment_content' rows='3' placeholder='Write your comment here...' required style='width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 0.5em; border-radius: 4px; border: 1px solid #ccc;'></textarea>
+                <label for='comment_content_area' class='visually-hidden'>Comment:</label>
+                <textarea id='comment_content_area' name='comment_content' rows='3' placeholder='Write your comment here...' required style='width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 0.5em; border-radius: 4px; border: 1px solid #ccc;'></textarea>
                 <button type='submit' class='register-btn' style='width: auto; padding: 8px 15px;'>Post Comment</button>
             </form>
             {% if modal_error %}

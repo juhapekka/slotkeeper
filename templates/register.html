@@ -18,7 +18,9 @@
       <form method='post'>
         <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
         <div style='margin-bottom:0.8rem;'>
+          <label for='reg_username' class='visually-hidden'>Username:</label>
           <input type='text'
+                 id='reg_username'
                  name='username'
                  placeholder='Username'
                  required
@@ -27,7 +29,9 @@
         </div>
 
         <div style='margin-bottom:1rem;'>
+          <label for='reg_password' class='visually-hidden'>Password:</label>
           <input type='password'
+                 id='reg_password' 
                  name='password'
                  placeholder='Password'
                  required

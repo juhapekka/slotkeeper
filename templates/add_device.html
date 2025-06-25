@@ -19,12 +19,14 @@
       <form method='post'>
         <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
         <div style='margin-bottom:0.8rem;'>
-          <input type='text' name='name' placeholder='Device name' required
+          <label for='device_name_field' class='visually-hidden'>Device Name:</label>
+          <input type='text' id='device_name_field' name='name' placeholder='Device name' required
                  style='width:100%; padding:8px; box-sizing:border-box;' maxlength='32'>
         </div>
 
         <div style='margin-bottom:1rem;'>
-          <textarea name='description' rows='4' placeholder='Description (optional)'
+            <label for='device_desc_field' class='visually-hidden'>Description:</label>
+            <textarea id='device_desc_field' name='description' rows='4' placeholder='Description (optional)'
                     style='width:100%; padding:8px; box-sizing:border-box;' maxlength='4096'></textarea>
         </div>
 
