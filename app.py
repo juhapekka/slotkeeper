@@ -90,7 +90,7 @@ def register():
             if db.create_user(username, password_hash):
                 return redirect(url_for('login'))
             else:
-                error='Username already exists.'
+                error = 'Username already exists.'
     else:
         su.generate_csrf_token(session)
 
@@ -133,34 +133,28 @@ def logout():
 @login_required_with_csrf
 def add_device():
     '''Handle adding new device from UI'''
+    error = None
+
     if request.method == 'POST':
         name = request.form['name'].strip()
         description = request.form['description']
         user = db.get_user_by_username(session['username'])
 
         if not name:
-            return render_template('add_device.html',
-                                   error='Device name is required.',
-                                   csrf_token=session['csrf_token'])
+            error = 'Device name is required.'
 
         if len(name) > 32:
-            return render_template('add_device.html',
-                                   error='Device name too long (max 32 characters).',
-                                   csrf_token=session['csrf_token'])
+            error = 'Device name too long (max 32 characters).'
 
         if len(description) > 4096:
-            return render_template('add_device.html',
-                                   error='Description too long (max 4096 characters).',
-                                   csrf_token=session['csrf_token'])
+            error = 'Description too long (max 4096 characters).'
 
-        if user:
+        if not error:
             db.add_device(name, description, user['id'])
             return redirect(url_for('index'))
 
-        return redirect(url_for('login'))
-
     csrf_token = su.generate_csrf_token(session)
-    return render_template('add_device.html', csrf_token=csrf_token)
+    return render_template('add_device.html', error=error, csrf_token=csrf_token)
 
 @app.route('/edit_device/<int:device_id>', methods=['GET', 'POST'])
 @login_required_with_csrf
@@ -382,38 +376,33 @@ def user_page():
 def add_comment_to_device(device_id):
     '''Add comment to device, on device page'''
     user = db.get_user_by_username(session['username'])
+    error = None
+
     if not user:
         return 'User not found', 403
-
-    content = request.form.get('comment_content')
-    if not content or len(content.strip()) == 0:
-        return redirect(url_for('view_device',
-                                device_id=device_id,
-                                error='Comment cannot be empty.'))
-
-    if len(content) > 1024:
-        return redirect(url_for('view_device',
-                                device_id=device_id,
-                                error='Comment too long (max 1024 chars).'))
 
     original_page = request.form.get('original_page', 1, type=int)
     original_query = request.form.get('original_query', '')
     original_only_mine_str = request.form.get('original_only_mine', '')
     original_only_mine_bool = original_only_mine_str == '1'
 
-    if db.add_comment(device_id, user['id'], content.strip()):
-        return redirect(url_for('view_device',
-                                device_id=device_id,
-                                page=original_page,
-                                q=original_query,
-                                only_mine=('1' if original_only_mine_bool else None)))
-    else:
-        return redirect(url_for('view_device',
-                                device_id=device_id,
-                                error='Failed to add comment.',
-                                page=original_page,
-                                q=original_query,
-                                only_mine=('1' if original_only_mine_bool else None)))
+    content = request.form.get('comment_content')
+    if not content or len(content.strip()) == 0:
+        error = 'Comment cannot be empty.'
+
+    if len(content) > 1024:
+        error = 'Comment too long (max 1024 chars).'
+
+    if not error:
+        if not db.add_comment(device_id, user['id'], content.strip()):
+            error = 'Failed to add comment.'
+
+    return redirect(url_for('view_device',
+                            device_id=device_id,
+                            error=error,
+                            page=original_page,
+                            q=original_query,
+                            only_mine=('1' if original_only_mine_bool else None)))
 
 @app.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required_with_csrf
