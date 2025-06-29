@@ -1,10 +1,12 @@
-'''Database module for slotkeeper app'''
+'''database module for slotkeeper app'''
 import sqlite3
 from datetime import datetime
 
 class Database:
-    def __init__(self, db_path):
+    '''All database activity happen only here'''
+    def __init__(self, db_path, pagesize=10):
         self.db_path = db_path
+        self._pagesize = pagesize
 
     def _connect(self):
         conn = sqlite3.connect(self.db_path)
@@ -12,6 +14,7 @@ class Database:
         return conn
 
     def create_user(self, username, password_hash):
+        '''add new user to database'''
         conn = self._connect()
         try:
             conn.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)',
@@ -24,6 +27,7 @@ class Database:
             conn.close()
 
     def get_user_by_username(self, username):
+        '''get user with username from db'''
         conn = self._connect()
         user = conn.execute(
             '''SELECT id, username, password_hash, created_at
@@ -34,6 +38,7 @@ class Database:
         return user
 
     def add_device(self, name, description, created_by):
+        '''add new device to database'''
         conn = self._connect()
         try:
             conn.execute(
@@ -49,6 +54,7 @@ class Database:
             conn.close()
 
     def get_device_by_id(self, device_id):
+        '''get device from db by id'''
         conn = self._connect()
         device = conn.execute(
             '''SELECT d.id, d.name, d.description, d.created_by, d.created_at,
@@ -60,6 +66,7 @@ class Database:
         return device
 
     def update_device(self, device_id, name, description):
+        '''update device in db by id'''
         conn = self._connect()
         conn.execute('UPDATE devices SET name = ?, description = ? WHERE id = ?',
                      (name, description, device_id)
@@ -68,16 +75,13 @@ class Database:
         conn.close()
 
     def delete_device(self, device_id):
+        '''delete device from db by id'''
         conn = self._connect()
         conn.execute('DELETE FROM devices WHERE id = ?', (device_id,))
         conn.commit()
         conn.close()
 
-    def search_devices(self, query=None, user_id=None, owned=False, page=1, limit=20):
-        conn = self._connect()
-        search = f'%{query}%' if query else '%'
-        params = [search, search]
-
+    def __get_clauses(self, owned, user_id, params):
         clauses = ['(d.name LIKE ? OR d.description LIKE ?)']
 
         if owned and user_id:
@@ -91,7 +95,39 @@ class Database:
                    )''')
             params.append(user_id)
 
-        where_sql = ' AND '.join(clauses)
+        return clauses
+
+    def __get_items(self, count_sql, params, query_params, sql):
+        conn = self._connect()
+
+        try:
+            count_cursor = conn.execute(count_sql, params)
+            total = count_cursor.fetchone()[0]
+
+            cursor = conn.execute(sql, query_params)
+            items = [dict(row) for row in cursor.fetchall()]
+
+            return {
+                'total': total,
+                'items': items
+            }
+
+        except sqlite3.Error as e:
+            print('search_devices failed:', e)
+            return {
+                'total': 0,
+                'items': []
+            }
+        finally:
+            conn.close()
+
+
+    def search_devices(self, query=None, user_id=None, owned=False, page=1):
+        '''search device from db with page limit'''
+        search = f'%{query}%' if query else '%'
+        params = [search, search]
+
+        where_sql = ' AND '.join(self.__get_clauses(owned, user_id, params))
 
         # COUNT query
         count_sql = f'SELECT COUNT(*) FROM devices d WHERE {where_sql};'
@@ -130,32 +166,18 @@ class Database:
         LIMIT ? OFFSET ?;
         '''
 
-        try:
-            count_cursor = conn.execute(count_sql, params)
-            total = count_cursor.fetchone()[0]
+        query_params = params + [user_id if user_id else 0,
+                                 self._pagesize,
+                                 (page - 1) * self._pagesize]
 
-            query_params = params + [user_id if user_id else 0, limit, (page - 1) * limit]
-            cursor = conn.execute(sql, query_params)
-            items = [dict(row) for row in cursor.fetchall()]
+        return self.__get_items(count_sql, params, query_params, sql)
 
-            return {
-                'total': total,
-                'items': items
-            }
-
-        except sqlite3.Error as e:
-            print('search_devices failed:', e)
-            return {
-                'total': 0,
-                'items': []
-            }
-        finally:
-            conn.close()
-
-    def get_all_devices(self, user_id=None, owned=False, page=1, limit=20):
-        return self.search_devices(query=None, user_id=user_id, owned=owned, page=page, limit=limit)
+    def get_all_devices(self, user_id=None, owned=False, page=1):
+        '''get all devices from db'''
+        return self.search_devices(query=None, user_id=user_id, owned=owned, page=page)
 
     def create_reservation(self, user_id, device_id, reserved_until):
+        '''create reservation into db with device id'''
         conn = self._connect()
         try:
             reserved_until = int(datetime.fromisoformat(reserved_until).timestamp())
@@ -172,6 +194,7 @@ class Database:
             conn.close()
 
     def get_reservations_by_user(self, user_id):
+        '''get reservations made by user'''
         conn = self._connect()
         reservations = conn.execute(
             '''SELECT r.id, r.user_id, r.device_id, r.reserved_until,
@@ -186,18 +209,8 @@ class Database:
         conn.close()
         return reservations
 
-    def get_active_reservations_for_device(self, device_id, current_time):
-        conn = self._connect()
-        reservations = conn.execute(
-            '''SELECT id, user_id, device_id, reserved_until, created_at, ended_at
-               FROM reservations
-               WHERE device_id = ? AND reserved_until > ? AND ended_at IS NULL''',
-            (device_id, current_time)
-        ).fetchall()
-        conn.close()
-        return reservations
-
-    def cancel_reservation(self, reservation_id, user_id):
+    def cancel_reservation(self, reservation_id):
+        '''cancel reservation for device with device id'''
         conn = self._connect()
         conn.execute(
             '''UPDATE reservations 
@@ -208,6 +221,7 @@ class Database:
         conn.close()
 
     def get_active_reservation_for_device(self, device_id):
+        '''get reservations for device with device id'''
         conn = self._connect()
         reservation = conn.execute(
             '''SELECT r.id, r.user_id, r.device_id, r.reserved_until,
@@ -225,6 +239,7 @@ class Database:
         return reservation
 
     def get_active_reservations_by_user(self, username):
+        '''get active reservations by user'''
         conn = self._connect()
         cursor = conn.execute(
             '''SELECT r.id, d.name, r.reserved_until
@@ -239,6 +254,7 @@ class Database:
         return results
 
     def get_devices_created_by_user(self, username):
+        '''get devices created by user'''
         conn = self._connect()
         cursor = conn.execute(
             '''SELECT d.id, d.name, d.description
@@ -251,6 +267,7 @@ class Database:
         return results
 
     def get_last_reservations_by_user(self, username, limit=10):
+        '''get last reservations by user'''
         conn = self._connect()
         cursor = conn.execute(
             '''SELECT r.id, d.name, 
@@ -271,6 +288,7 @@ class Database:
         return results
 
     def add_comment(self, device_id, user_id, content):
+        '''add comment to device'''
         conn = self._connect()
         try:
             conn.execute(
@@ -286,6 +304,7 @@ class Database:
             conn.close()
 
     def get_comments_for_device(self, device_id):
+        '''get comments for device'''
         conn = self._connect()
         try:
             cursor = conn.cursor()
@@ -301,6 +320,7 @@ class Database:
             conn.close()
 
     def get_comment_by_id(self, comment_id):
+        '''get comment by id'''
         conn = self._connect()
         comment = conn.execute(
             '''SELECT id, device_id, user_id, content, created_at
@@ -310,6 +330,7 @@ class Database:
         return comment
 
     def delete_comment(self, comment_id, user_id_who_is_deleting):
+        '''delete comment'''
         conn = self._connect()
         try:
             # check if user deleting is the author
@@ -330,7 +351,7 @@ class Database:
         finally:
             conn.close()
 
-    def get_user_device_reservation_durations(self, user_id):
+    def __get_user_device_reservation_durations(self, user_id):
         conn = self._connect()
         try:
             cursor = conn.cursor()
@@ -370,7 +391,7 @@ class Database:
         finally:
             conn.close()
 
-    def get_user_device_reservation_counts(self, user_id):
+    def __get_user_device_reservation_counts(self, user_id):
         conn = self._connect()
         try:
             cursor = conn.cursor()
@@ -397,3 +418,8 @@ class Database:
             return []
         finally:
             conn.close()
+
+    def get_user_device_reservations(self, user_id):
+        '''user created device reservations tuple with count and time'''
+        return (self.__get_user_device_reservation_counts(user_id),
+                self.__get_user_device_reservation_durations(user_id))

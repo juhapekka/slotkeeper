@@ -96,8 +96,7 @@ def generate_pie_chart_segments(device_list, value_key='value', label_key='name'
         for i, input_list in enumerate(pie_items):
             item_nvalue = input_list.get(value_key, 0)
             percentage = 0
-            if total_value > 0:
-                percentage = (item_nvalue / total_value) * 100
+            percentage = (item_nvalue / total_value) * 100
 
             # dict to template
             item_dict = {
@@ -119,8 +118,9 @@ def generate_pie_chart_segments(device_list, value_key='value', label_key='name'
             is_last_segment = i == len(pie_items) - 1
             if is_last_segment and cur_angle < 100:
                 cur_angle = 100.0
-            elif total_value > 0 :
+            else:
                 cur_angle += percentage
+
             cur_angle = min(max(cur_angle, 0), 100.0)
             start_percentage = min(max(start_percentage,0), 100.0)
             gradient_parts.append(

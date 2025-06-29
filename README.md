@@ -105,7 +105,7 @@ Suorituskyky suurilla datamäärillä: Sovellukseen on toteutettu tietokantainde
 
 ## Rakenne
 * app.py: Pääasiallinen Flask-sovellustiedosto, sisältää reitit ja sovelluslogiikan.
-* Database.py: Luokka tietokantatoiminnoille (SQLite).
+* database.py: Luokka tietokantatoiminnoille (SQLite).
 * schema.sql: SQL-lausekkeet tietokantataulujen ja indeksien luomiseen.
 * demo.sql: SQL-lausekkeet pienen demomäärän lisäämiseen.
 * seed.py: Python-skripti suuren testidatamäärän generoimiseen.

@@ -8,15 +8,15 @@ import time
 from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 import config
-from Database import Database
+from database import Database
 import slotkeeperutil as su
 
 app = Flask(__name__)
 ITEMS_PER_PAGE = 10
 DATABASE = 'database.db'
-app.secret_key = config.secret_key  # Used to sign session cookies
-'''Instantiate the Database class'''
-db = Database(DATABASE)
+app.secret_key = config.SECRET_KEY  # Used to sign session cookies
+'''Instantiate the database class'''
+db = Database(DATABASE, ITEMS_PER_PAGE)
 
 def login_required_with_csrf(f):
     '''wrapper to check login and for POST csrf status'''
@@ -49,7 +49,7 @@ def index():
             page = 1
         page = max(page, 1)
 
-        devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+        devices = db.search_devices(query, user_id, only_mine, page=page)
         device_data = su.fill_in_device_list(session, db, devices['items'])
 
         csrf_token = su.generate_csrf_token(session)
@@ -89,8 +89,8 @@ def register():
         if not error:
             if db.create_user(username, password_hash):
                 return redirect(url_for('login'))
-            else:
-                error = 'Username already exists.'
+
+            error = 'Username already exists.'
     else:
         su.generate_csrf_token(session)
 
@@ -226,7 +226,7 @@ def reserve(device_id):
             page = 1
         page = max(page, 1)
 
-        devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+        devices = db.search_devices(query, user_id, only_mine, page=page)
         device_data = su.fill_in_device_list(session, db, devices['items'])
 
         csrf_token = su.generate_csrf_token(session)
@@ -253,8 +253,7 @@ def reserve(device_id):
 @login_required_with_csrf
 def cancel_reservation(reservation_id):
     '''Handle releasing reservation from UI'''
-    user = db.get_user_by_username(session['username'])
-    db.cancel_reservation(reservation_id, user['id'])
+    db.cancel_reservation(reservation_id)
     original_page = request.form.get('original_page', 1, type=int)
     original_query = request.form.get('original_query', '')
     original_only_mine_str = request.form.get('original_only_mine', '')
@@ -299,7 +298,7 @@ def view_device(device_id):
         page = 1
     page = max(page, 1)
 
-    devices = db.search_devices(query, user_id, only_mine, page=page, limit=ITEMS_PER_PAGE)
+    devices = db.search_devices(query, user_id, only_mine, page=page)
     device_data = su.fill_in_device_list(session, db, devices['items'])
 
     error_message = request.args.get('error')
@@ -336,21 +335,20 @@ def user_page():
 
     user_id = user['id']
 
-    device_res_counts = db.get_user_device_reservation_counts(user_id)
+    device_res = db.get_user_device_reservations(user_id)
 
     pie_data_counts, gradient_counts, has_pie_counts = su.generate_pie_chart_segments(
-        device_res_counts,
+        device_res[0],
         label_key='device_name',
         value_key='reservation_count')
 
-    device_res_durations = db.get_user_device_reservation_durations(user_id)
-
     processed_device_res_durations = []
-    for item in device_res_durations:
+    for item in device_res[1]:
         processed_device_res_durations.append({
             'device_name': item.get('device_name', 'Unknown Device'),
             'total_duration_seconds': item.get('total_duration_seconds', 0),
-            'formatted_duration': su.format_duration_to_string(item.get('total_duration_seconds', 0))
+            'formatted_duration': su.format_duration_to_string(
+                item.get('total_duration_seconds', 0))
         })
 
     pie_data_durations, gradient_durations, has_pie_durations = su.generate_pie_chart_segments(

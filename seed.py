@@ -10,15 +10,18 @@ N_DEVICES = 100000
 COMMENTS_PER_DEVICE = 100
 
 def hash_password(password):
+    '''pasword hash for passwords'''
     return hashlib.sha256(password.encode()).hexdigest()
 
 def insert_users(conn, n):
+    '''generic user insert'''
     print('Inserting users...')
     users = [(f'user{i}', hash_password(f'pass{i}')) for i in range(n)]
     conn.executemany('INSERT INTO users (username, password_hash) VALUES (?, ?)', users)
     conn.commit()
 
 def insert_devices(conn, n):
+    '''generic device insert'''
     print('Inserting devices...')
     devices = [(f'device{i}', f'description of device {i}', i % N_USERS + 1) for i in range(n)]
     conn.executemany('INSERT INTO devices (name, description, created_by) VALUES (?, ?, ?)',
@@ -26,6 +29,7 @@ def insert_devices(conn, n):
     conn.commit()
 
 def insert_comments(conn, n_devices, comments_per_device):
+    '''generic comment insert'''
     print('Inserting comments...')
     start_time = time.time()
     batch = []
@@ -44,7 +48,8 @@ def insert_comments(conn, n_devices, comments_per_device):
                     batch
                 )
                 conn.commit()
-                print(f'Inserted {len(batch)} comments (total so far: {d * comments_per_device + c + 1})')
+                print(f'Inserted {len(batch)} comments '
+                      f'(total so far: {d * comments_per_device + c + 1})')
                 batch = []
 
     if batch:
@@ -59,6 +64,7 @@ def insert_comments(conn, n_devices, comments_per_device):
     print(f'Inserted all comments in {elapsed:.2f} seconds')
 
 def main():
+    '''main'''
     conn = sqlite3.connect(DB_PATH)
     insert_users(conn, N_USERS)
     insert_devices(conn, N_DEVICES)
